@@ -84,7 +84,7 @@ class DataModelWWMI(DataModel):
 
         # Request 16-bit VG ids for Blend Remap system
         if build_blend_remaps:
-            # Number of VGs per vertex may vary based on buffers_format, we should respect it
+            # Number of VGs per vertex may vary based on buffers_format, we should respect itAdd commentMore actions
             num_vgs = buffers_format['Blend'].get_element(AbstractSemantic(Semantic.Blendindices, 0)).get_num_values()
             buffers_format['BlendRemapVertexVG'] = BufferLayout([
                 BufferSemantic(AbstractSemantic(Semantic.Blendindices, 1), DXGIFormat.R16_UINT, stride=num_vgs*2),
@@ -217,7 +217,7 @@ class DataModelWWMI(DataModel):
         for index_count in index_layout:
             # Extract a segment of Index Buffer for the component (index_count number of indices starting from index_offset)
             vertex_ids = index_data[index_offset:index_offset+index_count]
-            # Remove duplicate vertex ids (since multiple indices may reference the same vertex)
+            # Remove duplicate vertex ids (since multiple indices may referrnce the same vertex)
             vertex_ids = numpy.unique(vertex_ids)
 
             # Get VG ids used to weight vertices used in the component
@@ -228,7 +228,7 @@ class DataModelWWMI(DataModel):
                 index_offset += index_count
                 remapped_vgs_counts.append(0)
                 continue
-
+            
             # Get weights for vertices referenced by the component
             obj_vg_weights = vg_weights[vertex_ids].flatten()
             # Get indices of non-zero weights (to skip remapping VG ids that are listed but not actually used)

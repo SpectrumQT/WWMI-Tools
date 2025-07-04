@@ -65,9 +65,9 @@ class ModExporter:
         try:
             self.extracted_object = read_metadata(self.object_source_folder / 'Metadata.json')
         except FileNotFoundError:
-            raise ConfigError('object_source_folder', 'Specified folder is missing Metadata.json!')
+            raise ConfigError('object_source_folder', '指定文件夹缺少 Metadata.json 文件!')
         except Exception as e:
-            raise ConfigError('object_source_folder', f'Failed to load Metadata.json:\n{e}')
+            raise ConfigError('object_source_folder', f'加载 Metadata.json 失败:\n{e}')
 
         user_context = get_user_context(self.context)
 

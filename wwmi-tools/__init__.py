@@ -12,7 +12,7 @@ bl_info = {
     "version": (1, 3, 4),
     "wwmi_version": (0, 9, 1),
     "blender": (2, 93, 0),
-    "author": "SpectrumQT, LeoTorreZ, SinsOfSeven, SilentNightSound, DarkStarSword",
+    "author": "SpectrumQT, LeoTorreZ, SinsOfSeven, SilentNightSound, DarkStarSword, Chinese(Simplified)-QianHuanAims",
     "location": "View3D > Sidebar > Tool Tab",
     "description": "Wuthering Waves modding toolkit",
     "category": "Object",

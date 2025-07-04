@@ -159,7 +159,7 @@ class ObjectMerger:
                             muted_shape_keys.append(shape_key)
                     for shape_key in muted_shape_keys:
                         temp_obj.shape_key_remove(shape_key)
-                # Modify temporary object
+                # Modify temporary objectAdd commentMore actions
                 with OpenObject(self.context, temp_obj, mode='OBJECT') as obj:
                     # Apply all transforms
                     bpy.ops.object.transform_apply(location = True, rotation = True, scale = True)
@@ -201,12 +201,13 @@ class ObjectMerger:
         for component_id, component in enumerate(self.components):
             for temp_object in component.objects:
                 remove_mesh(temp_object.object.data)
-
+        
     def transform_merged_object(self, merged_object):
         change_scale = self.mesh_scale != 1.0
         change_rotation = self.mesh_rotation != (0.0, 0.0, 0.0)
         if not change_scale and not change_rotation:
             return
+        
         # Compensate transforms we're about to set
         if change_scale:
             inverted_scale = 1 / self.mesh_scale
@@ -214,8 +215,9 @@ class ObjectMerger:
         if change_rotation:
             inverted_rotation = tuple([360 - r if r != 0 and r != 0 else 0 for r in self.mesh_rotation])
             merged_object.rotation_euler = to_radians(inverted_rotation)
+
         bpy.ops.object.transform_apply(location = False, rotation = True, scale = True)
-        # Set merged object transforms
+        #  Set merged object transforms
         if change_scale:
             merged_object.scale = self.mesh_scale, self.mesh_scale, self.mesh_scale
         if change_rotation:
@@ -240,7 +242,7 @@ class ObjectMerger:
         deselect_all_objects()
         select_object(obj)
         set_active_object(bpy.context, obj)
-        
+
         self.transform_merged_object(obj)
 
         mesh = obj.evaluated_get(self.context.evaluated_depsgraph_get()).to_mesh()

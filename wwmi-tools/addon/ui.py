@@ -223,7 +223,7 @@ class WWMI_TOOLS_PT_SidePanelPartialExport(bpy.types.Panel):
 
 
 class WWMI_TOOLS_PT_SidePanelModInfo(bpy.types.Panel):
-    bl_label = "Mod Info"
+    bl_label = "模组信息"
     bl_parent_id = "WWMI_TOOLS_PT_SIDEBAR"
     # bl_options = {'DEFAULT_CLOSED'}
     bl_space_type = 'VIEW_3D'
@@ -247,7 +247,7 @@ class WWMI_TOOLS_PT_SidePanelModInfo(bpy.types.Panel):
 
 
 class WWMI_TOOLS_PT_SidePanelIniTemplate(bpy.types.Panel):
-    bl_label = "Ini Template"
+    bl_label = "INI 模版"
     bl_idname = "WWMI_TOOLS_PT_INI_TEMPLATE"
     bl_parent_id = "WWMI_TOOLS_PT_SIDEBAR"
     bl_options = {'DEFAULT_CLOSED'}
@@ -290,9 +290,9 @@ class WWMI_TOOLS_PT_SidePanelIniTemplate(bpy.types.Panel):
             
             col_right = split.column()
             if cfg.custom_template_live_update:
-                col_right.operator(WWMI_IniTemplateEditor_ToggleLiveUpdates.bl_idname, text="Stop Ini Updates")
+                col_right.operator(WWMI_IniTemplateEditor_ToggleLiveUpdates.bl_idname, text="停止 INI 更新")
             else:
-                col_right.operator(WWMI_IniTemplateEditor_ToggleLiveUpdates.bl_idname, text="Start Ini Updates")
+                col_right.operator(WWMI_IniTemplateEditor_ToggleLiveUpdates.bl_idname, text="启动 INI 更新")
 
 
 class WWMI_TOOLS_PT_SidePanelExportFooter(bpy.types.Panel):
@@ -325,8 +325,8 @@ class WWMI_Import(bpy.types.Operator):
     Import object extracted from frame dump data with WWMI
     """
     bl_idname = "wwmi_tools.import_object"
-    bl_label = "Import Object"
-    bl_description = "Import object extracted from frame dump data with WWMI"
+    bl_label = "导入对象"
+    bl_description = "从帧转储数据中导入使用 WWMI 提取的对象"
 
     bl_options = {'UNDO'}
 
@@ -351,8 +351,8 @@ class WWMI_Export(bpy.types.Operator):
     Export object as WWMI mod
     """
     bl_idname = "wwmi_tools.export_mod"
-    bl_label = "Export Mod"
-    bl_description = "Export object as WWMI mod"
+    bl_label = "导出模组"
+    bl_description = "将对象导出为 WWMI 模组"
 
     def get_excluded_buffers(self, context):
         """
@@ -411,8 +411,8 @@ class WWMI_ExtractFrameData(bpy.types.Operator):
     Extract objects from frame dump
     """
     bl_idname = "wwmi_tools.extract_frame_data"
-    bl_label = "Extract Objects From Dump"
-    bl_description = "Extract objects from frame dump"
+    bl_label = "从帧转储中提取对象"
+    bl_description = "从帧转储中提取对象"
 
     def execute(self, context):
         try:
@@ -433,7 +433,7 @@ class WWMI_OpenIniTemplateEditor(bpy.types.Operator):
     Open current custom template in internal or external editor.
     """
     bl_idname = "wwmi_tools.open_ini_template_editor"
-    bl_label = "Edit Template"
+    bl_label = "编辑模版"
     bl_description = "Open current custom template file in internal or external editor."
 
     def execute(self, context):
@@ -442,7 +442,7 @@ class WWMI_OpenIniTemplateEditor(bpy.types.Operator):
         if cfg.custom_template_source == 'EXTERNAL':
             template_path = resolve_path(cfg.custom_template_path)
             if not template_path.is_file():
-                raise ValueError(f'Custom ini template file not found: `{template_path}`!')
+                raise ValueError(f'未找到自定义 ini 模板文件: `{template_path}`!')
             subprocess.Popen([f'{str(template_path)}'], shell=True)
             return {'FINISHED'}
 
@@ -482,8 +482,8 @@ class WWMI_OpenIniTemplateEditor(bpy.types.Operator):
 
 class WWMI_IniTemplateEditor_ToggleLiveUpdates(bpy.types.Operator):
     bl_idname = "wwmi_tools.ini_template_start_live_updates"
-    bl_label = "Start Ini Updates"
-    bl_description = "Once started, WWMI Tools will run export with current settings and start writing mod.ini on each template edit.\n"
+    bl_label = "启动 INI 更新"
+    bl_description = "一旦启动，WWMI Tools 将使用当前设置运行导出, 并在每次模板编辑时开始写入 mod.ini.\n"
     "Warning! Mod export will be blocked until live updates are stopped!"
 
     def execute(self, context):
@@ -503,8 +503,8 @@ class WWMI_IniTemplateEditor_ToggleLiveUpdates(bpy.types.Operator):
 
 class WWMI_IniTemplateEditor_Reset(bpy.types.Operator):
     bl_idname = "wwmi_tools.ini_template_editor_reset"
-    bl_label = "Reset Template"
-    bl_description = "Warning! This action will reset custom template to default!"
+    bl_label = "重置模版"
+    bl_description = "警告! 此操作将重置自定义模板为默认值!"
 
     def execute(self, context):
         cfg = context.scene.wwmi_tools_settings
@@ -527,7 +527,7 @@ class WWMI_IniTemplateEditor_Reset(bpy.types.Operator):
     
 
 class WWMI_TOOLS_PT_TEXT_EDITOR_IniTemplate(bpy.types.Panel):
-    bl_label = "Ini Template - WWMI Tools"
+    bl_label = "INI 模版 - WWMI Tools"
     bl_space_type = "TEXT_EDITOR"
     bl_region_type = "UI"
     bl_category = "Text"
@@ -537,16 +537,16 @@ class WWMI_TOOLS_PT_TEXT_EDITOR_IniTemplate(bpy.types.Panel):
         cfg = context.scene.wwmi_tools_settings
         
         if cfg.custom_template_live_update:
-            layout.operator(WWMI_IniTemplateEditor_ToggleLiveUpdates.bl_idname, text="Stop Ini Updates")
+            layout.operator(WWMI_IniTemplateEditor_ToggleLiveUpdates.bl_idname, text="停止 INI 更新")
         else:
-            layout.operator(WWMI_IniTemplateEditor_ToggleLiveUpdates.bl_idname, text="Start Ini Updates")
+            layout.operator(WWMI_IniTemplateEditor_ToggleLiveUpdates.bl_idname, text="启动 INI 更新")
 
         layout.operator(WWMI_IniTemplateEditor_Reset.bl_idname)
 
 
 class UpdaterPanel(bpy.types.Panel):
     """Update Panel"""
-    bl_label = "Update Settings"
+    bl_label = "更新设置"
     bl_idname = "WWMI_TOOLS_PT_UpdaterPanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -577,7 +577,7 @@ class UpdaterPanel(bpy.types.Panel):
 
 class DebugPanel(bpy.types.Panel):
     """Debug Panel"""
-    bl_label = "Debug Settings"
+    bl_label = "调试设置"
     bl_idname = "WWMI_TOOLS_PT_DebugPanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'

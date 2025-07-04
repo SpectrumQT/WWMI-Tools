@@ -12,8 +12,8 @@ from ....migoto_io.blender_tools.meshes import *
 
 class WWMI_MergeVertexGroups(bpy.types.Operator):
     bl_idname = "wwmi_tools.merge_vertex_groups"
-    bl_label = "Merge Vertex Groups"
-    bl_description = "Merges vertex groups with same name before dot (i.e. `7` with `7.1` and `7.3`). Sourced by SilentNightSound#7430"
+    bl_label = "合并具有相同名称的顶点组"
+    bl_description = "将名称中点 (.) 之前部分相同的顶点组进行合并 (例如: 将 7 与 7.1 和 7.3 合并). 由 SilentNightSound#7430 提供"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -35,8 +35,8 @@ class WWMI_FillGapsInVertexGroups(bpy.types.Operator):
     Very useful to make sure there are no gaps or out-of-order vertex groups
     """
     bl_idname = "wwmi_tools.fill_gaps_in_vertex_groups"
-    bl_label = "Fill Gaps In Vertex Groups"
-    bl_description = "Adds missing vertex groups and sorts the VG lists of selected objects (i.e. if object had 0,4,2 groups, it'll add missing 1,3 and sort the list to 0,1,2,3,4). Sourced by SilentNightSound#7430"
+    bl_label = "填充数字顶点组的空隙"
+    bl_description = "为选定对象添加缺失的顶点组, 并对其顶点组列表进行排序 (例如: 如果对象有 0、4、2 组顶点组, 它将添加缺失的 1 和 3, 并将列表排序为 0、1、2、3、4). 由 SilentNightSound#7430 提供"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -55,8 +55,8 @@ class WWMI_RemoveUnusedVertexGroups(bpy.types.Operator):
     Remove all vertex groups from selected objects
     """
     bl_idname = "wwmi_tools.remove_unused_vertex_groups"
-    bl_label = "Remove Unused Vertex Groups"
-    bl_description = "Remove vertex groups with zero weights from selected objects. Sourced by Ave"
+    bl_label = "移除未使用的空顶点组"
+    bl_description = "从选定对象中移除权重为零的顶点组. 由 Ave 提供"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -75,8 +75,8 @@ class WWMI_RemoveAllVertexGroups(bpy.types.Operator):
     Remove all vertex groups from selected objects
     """
     bl_idname = "wwmi_tools.remove_all_vertex_groups"
-    bl_label = "Remove All Vertex Groups"
-    bl_description = "Remove all vertex groups from selected objects"
+    bl_label = "移除全部顶点组"
+    bl_description = "从选定对象中移除全部顶点组"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -100,8 +100,8 @@ bpy.utils.register_class(PropertyCollectionModifierItem)
 
 class WWMI_ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
     bl_idname = "wwmi_tools.apply_modifier_for_object_with_shape_keys"
-    bl_label = "Apply Modifiers For Object With Shape Keys"
-    bl_description = "Apply selected modifiers and remove from the stack for object with shape keys (Solves 'Modifier cannot be applied to a mesh with shape keys' error when pushing 'Apply' button in 'Object modifiers'). Sourced by Przemysław Bągard"
+    bl_label = "为具有形态键的对象应用修改器"
+    bl_description = "为具有形态键的对象应用选定的修改器, 并从堆栈中移除 (解决了在'对象修改器'中点击'应用'按钮时出现的'无法将修改器应用于具有形状键的网格'错误). 由Przemysław Bągard提供"
     bl_options = {'REGISTER', 'UNDO'}
 
     def item_list(self, context):
@@ -112,7 +112,7 @@ class WWMI_ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
     ) # type: ignore
     
     disable_armatures: BoolProperty(
-        name="Don't include armature deformations",
+        name="不包括骨架变形",
         default=True,
     ) # type: ignore
  
@@ -162,8 +162,8 @@ class WWMI_ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
 
 class WWMI_CreateMergedObject(bpy.types.Operator):
     bl_idname = "wwmi_tools.create_merged_object"
-    bl_label = "Create Merged Object"
-    bl_description = "Join selected objects into merged object for sculpting. WARNING! Do not add or remove vertices in original objects until you done working with the merged one!"
+    bl_label = "创建合并对象 (至少选择两个对象以上)"
+    bl_description = "将选定对象合并为一个对象以便进行雕刻. 警告: 在完成合并对象的雕刻工作之前，请不要在原始对象中添加或删除顶点!"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -178,8 +178,8 @@ class WWMI_CreateMergedObject(bpy.types.Operator):
 
 class WWMI_ApplyMergedObjectSculpt(bpy.types.Operator):
     bl_idname = "wwmi_tools.apply_merged_object_sculpt"
-    bl_label = "Apply Merged Object Sculpt"
-    bl_description = "Transfer vertex positions from merged object to original objects"
+    bl_label = "应用合并对象的顶点位置变换"
+    bl_description = "将合并对象的顶点位置传输回原始对象"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):

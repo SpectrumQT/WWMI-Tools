@@ -83,12 +83,12 @@ class BlenderDataImporter:
             except ValueError:
                 if not data.flags.writeable:
                     data = converter(data.copy())
-
+                    
         # Any remaining normalized integers must be converted to floats before running semantic converters
         if buffer_semantic.format.dxgi_type in [DXGIType.UNORM16, DXGIType.UNORM8, DXGIType.SNORM16, DXGIType.SNORM8]:
             if not numpy.issubdtype(data.dtype, numpy.floating):
                 data = buffer_semantic.format.type_decoder(data)
-            
+
         for converter in semantic_converters.get(buffer_semantic.abstract, []):
             try:
                 data = converter(data)

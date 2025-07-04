@@ -270,7 +270,7 @@ class DataModel:
     def converter_mirror_vector(data: numpy.ndarray) -> numpy.ndarray:
         data[:, 0] *= -1
         return data
-    
+
     @staticmethod
     def converter_rotate_vector(data: numpy.ndarray, rotation: Tuple[float]) -> numpy.ndarray:
         rotation_matrix = mathutils.Euler(tuple(map(math.radians, rotation)), 'XYZ').to_matrix().to_4x4()

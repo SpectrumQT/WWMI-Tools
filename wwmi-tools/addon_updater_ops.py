@@ -226,7 +226,7 @@ class AddonUpdaterInstallPopup(bpy.types.Operator):
 
 # User preference check-now operator
 class AddonUpdaterCheckNow(bpy.types.Operator):
-    bl_label = "Check For Update"
+    bl_label = "检查更新"
     bl_idname = updater.addon + ".updater_check_now"
     bl_description = "Check now for an update to the {} addon".format(
         updater.addon)
@@ -893,7 +893,7 @@ def update_notice_box_ui(self, context):
             alert_row.alert = True
             alert_row.operator(
                 "wm.quit_blender",
-                text="Restart blender",
+                text="重新启动 Blender",
                 icon="ERROR")
             col.label(text="to complete update")
             return
@@ -908,7 +908,7 @@ def update_notice_box_ui(self, context):
     box = layout.box()
     col = box.column(align=True)
     col.alert = True
-    col.label(text="Update ready!", icon="ERROR")
+    col.label(text="更新就绪!", icon="ERROR")
     col.alert = False
     col.separator()
     row = col.row(align=True)
@@ -920,16 +920,16 @@ def update_notice_box_ui(self, context):
     colR.scale_y = 1.5
     if not updater.manual_only:
         colR.operator(AddonUpdaterUpdateNow.bl_idname,
-                      text="Update", icon="LOOP_FORWARDS")
+                      text="更新", icon="LOOP_FORWARDS")
         col.operator("wm.url_open", text="Open website").url = updater.website
         # ops = col.operator("wm.url_open",text="Direct download")
         # ops.url=updater.update_link
         col.operator(AddonUpdaterInstallManually.bl_idname,
-                     text="Install manually")
+                     text="手动安装")
     else:
         # ops = col.operator("wm.url_open", text="Direct download")
         # ops.url=updater.update_link
-        col.operator("wm.url_open", text="Get it now").url = updater.website
+        col.operator("wm.url_open", text="立即获取").url = updater.website
 
 
 def update_settings_ui(self, context, element=None):
@@ -1001,7 +1001,7 @@ def update_settings_ui(self, context, element=None):
         split = sub_col.split(align=True)
         split.enabled = False
         split.scale_y = 2
-        split.operator(AddonUpdaterCheckNow.bl_idname, text="Checking...")
+        split.operator(AddonUpdaterCheckNow.bl_idname, text="检查中...")
         split = sub_col.split(align=True)
         split.scale_y = 2
         split.operator(AddonUpdaterEndBackground.bl_idname, text="", icon="X")
@@ -1046,7 +1046,7 @@ def update_settings_ui(self, context, element=None):
         split.enabled = False
         split.scale_y = 2
         split.operator(AddonUpdaterCheckNow.bl_idname,
-                       text="Addon is up to date")
+                       text="插件是最新的!")
         split = sub_col.split(align=True)
         split.scale_y = 2
         split.operator(AddonUpdaterCheckNow.bl_idname,
@@ -1057,18 +1057,18 @@ def update_settings_ui(self, context, element=None):
         if updater.include_branches and len(updater.include_branch_list) > 0:
             branch = updater.include_branch_list[0]
             col.operator(AddonUpdaterUpdateTarget.bl_idname,
-                         text="Install {} / old version".format(branch))
+                         text="安装{} / 旧版本".format(branch))
         else:
             col.operator(AddonUpdaterUpdateTarget.bl_idname,
-                         text="(Re)install addon version")
-        last_date = "none found"
+                         text="重新安装插件版本")
+        last_date = "未找到"
         backup_path = os.path.join(updater.stage_path, "backup")
         if "backup_date" in updater.json and os.path.isdir(backup_path):
             if updater.json["backup_date"] == "":
-                last_date = "Date not found"
+                last_date = "未找到日期"
             else:
                 last_date = updater.json["backup_date"]
-        backup_text = "Restore addon backup ({})".format(last_date)
+        backup_text = "恢复插件备份 ({})".format(last_date)
         col.operator(AddonUpdaterRestoreBackup.bl_idname, text=backup_text)
 
     row = box.row()
@@ -1081,7 +1081,7 @@ def update_settings_ui(self, context, element=None):
     if not settings.auto_check_update:
         sub_col.enabled = False
     sub_row = sub_col.row()
-    sub_row.label(text="Interval between checks")
+    sub_row.label(text="检查间隔时间")
     sub_row = sub_col.row(align=True)
     check_col = sub_row.column(align=True)
     check_col.prop(settings, "updater_interval_months")
@@ -1101,9 +1101,9 @@ def update_settings_ui(self, context, element=None):
         row.label(text=updater.error_msg)
     elif last_check:
         last_check = last_check[0: last_check.index(".")]
-        row.label(text="Last update check: " + last_check)
+        row.label(text="上次更新检查: " + last_check)
     else:
-        row.label(text="Last update check: Never")
+        row.label(text="上次更新检查: 从不")
 
 
 def update_settings_ui_condensed(self, context, element=None):
@@ -1134,7 +1134,7 @@ def update_settings_ui_condensed(self, context, element=None):
             row.alert = True  # mark red
             row.operator(
                 "wm.quit_blender",
-                text="Restart blender to complete update",
+                text="重新启动 Blender 以完成更新",
                 icon="ERROR")
             return
 
@@ -1166,7 +1166,7 @@ def update_settings_ui_condensed(self, context, element=None):
         split = sub_col.split(align=True)
         split.enabled = False
         split.scale_y = 2
-        split.operator(AddonUpdaterCheckNow.bl_idname, text="Checking...")
+        split.operator(AddonUpdaterCheckNow.bl_idname, text="检查中...")
         split = sub_col.split(align=True)
         split.scale_y = 2
         split.operator(AddonUpdaterEndBackground.bl_idname, text="", icon="X")
@@ -1179,7 +1179,7 @@ def update_settings_ui_condensed(self, context, element=None):
         sub_col.scale_y = 1
         split = sub_col.split(align=True)
         split.scale_y = 2
-        now_txt = "Update directly to " + str(updater.include_branch_list[0])
+        now_txt = "直接更新到 " + str(updater.include_branch_list[0])
         split.operator(AddonUpdaterUpdateNow.bl_idname, text=now_txt)
         split = sub_col.split(align=True)
         split.scale_y = 2
@@ -1209,7 +1209,7 @@ def update_settings_ui_condensed(self, context, element=None):
         split.enabled = False
         split.scale_y = 2
         split.operator(AddonUpdaterCheckNow.bl_idname,
-                       text="Addon is up to date")
+                       text="插件是最新的!")
         split = sub_col.split(align=True)
         split.scale_y = 2
         split.operator(AddonUpdaterCheckNow.bl_idname,
@@ -1340,7 +1340,7 @@ def register():
     updater.user = "SpectrumQT"
     updater.repo = "WWMI-Tools"
     # updater.addon = # define at top of module, MUST be done first
-    updater.website = "https://github.com/SpectrumQT/WWMI-Tools/releases"
+    updater.website = "https://https://github.com/QianHuanAism/WWMI-Tools-CN/releases"
     updater.subfolder_path = "wwmi-tools"
     updater.current_version = bl_info["version"]
     updater.verbose = True  # make False for production default
@@ -1350,7 +1350,7 @@ def register():
     updater.remove_pre_update_patterns = ["*.py", "*.pyc"]
     updater.include_branches = True
     updater.use_releases = True
-    updater.include_branch_list = ['main']  # None is the equivalent = ['master']
+    updater.include_branch_list = ['主版本']  # None is the equivalent = ['master']
     updater.manual_only = False
 
     # Used for development only, "pretend" to install an update to test

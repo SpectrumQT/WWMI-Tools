@@ -266,7 +266,7 @@ def join_objects(context, objects):
     for mesh in unused_meshes:
         remove_mesh(mesh)
 
-        
+
 def set_rotation(context, obj, rotation: Tuple[float], apply_to_mesh = False, keep_orientation = False):
     """
     Warning! This function runs 10x slower than built-in one for objects with shapekeys

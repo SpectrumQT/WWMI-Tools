@@ -9,47 +9,54 @@ text_formatter = TextFormatter()
 
 class ToggleVarStateCondition(bpy.types.PropertyGroup):
     logic: bpy.props.EnumProperty(
-        description = "Controls how multiple conditions affect object display",
+        description = "控制多个条件如何影响对象的显示",
         items=[
-            ('&&', 'AND', 'Both this and previous condition must be TRUE for object to be displayed. AND conditions are evaluated before OR conditions'),
-            ('||', 'OR', 'Only this condition must be TRUE for object to be displayed. AND conditions are evaluated before OR conditions'),
+            ('&&', 'AND', """只有当这个条件和上一个条件都为 TRUE 时, 对象才会显示. AND 条件的运算优先级高于 OR 条件
+逻辑运算符中的逻辑与: &&, 可以理解为并且, 只有当两个条件的bool值都为True时最后的结果才为True.
+(例如: if $active == 1 && %swapvar == 1) 这里如果两个变量的值都为'1(True)', 那么满足逻辑与的条件, 最后的结果也会为True, 结果为True以后就会进入if的语句块内部, 反之如果两个变量的值里
+只要有一个不满足等于1这个条件, 那么也就不满足逻辑与的条件, 最后的结果就会是False, 结果为False以后就不会执行if语句块
+这些概念需要一定的编程基础, 如果有不懂的可以去查阅文档或者询问AI"""),
+            ('||', 'OR', """只有当这个条件为 TRUE 时, 对象才会显示. AND 条件的运算优先级高于 OR 条件
+逻辑运算符中的逻辑或: &&, 可以理解为或者, 两个条件做判断时, 只要有一个条件的结果为True, 那么整个表达式的结果就是True
+(例如: if $active == 1 || $swapvar == 1) 这里的两个变量里只有一个满足等于1(True)的这个条件, 那么整个表达式的结果就是True
+这些概念需要一定的编程基础, 如果有不懂的可以去查阅文档或者询问AI"""),
         ],
         default=0,
     ) # type: ignore
     type: bpy.props.EnumProperty(
-        description = "Allows to switch between Ini Toggle Var and custom ini variable",
+        description = "允许在 INI 切换变量和自定义 INI 变量之间切换",
         items=[
-            ('TOGGLE', 'Toggle', 'Bind condition to existing Ini Toggle Var'),
-            ('EXTERNAL', 'Custom', 'Bind condition to custom ini variable'),
+            ('TOGGLE', 'Toggle(切换)', '将条件绑定到现有的 INI 切换变量'),
+            ('EXTERNAL', 'Custom(自定义)', '将条件绑定到自定义 INI 变量'),
         ],
         default=0,
     ) # type: ignore
 
     var: bpy.props.StringProperty(
-        description = "Variable to compare with state value.\nHint: Add `$` prefix to Custom var `name` to prevent its auto-formatting to `$swapvar_name`",
+        description = "用于与状态值进行比较的变量.\n提示: 在自定义变量的名称前添加 $ 前缀，以防止其自动格式化为 '$swapvar_name'",
     ) # type: ignore
     operator: bpy.props.EnumProperty(
-        description = "Controls how variable must be compared to specified value for condition to return TRUE",
+        description = "控制变量如何与指定值进行比较，以使条件返回 TRUE",
         items=[
-            ('==', '==', 'Variable must be EQUAL to specified value'),
-            ('!=', '!=', 'Variable must be NOT EQUAL to specified value'),
-            ('>', '>', 'Variable must be GREATER than specified value'),
-            ('<', '<', 'Variable must be LOWER than specified value'),
-            ('>=', '>=', 'Variable must be GREATER OR EQUAL to specified value'),
-            ('<=', '<=', 'Variable must be LOWER OR EQUAL to specified value'),
+            ('==', '==', '变量必须等于指定值.'),
+            ('!=', '!=', '变量必须不等于指定值.'),
+            ('>', '>', '变量必须大于指定值.'),
+            ('<', '<', '变量必须小于指定值.'),
+            ('>=', '>=', '变量必须大于或等于指定值.'),
+            ('<=', '<=', '变量必须小于或等于指定值.'),
         ],
         default=0,
     ) # type: ignore
     state: bpy.props.StringProperty(
-        description = "State value against which variable should be compared"
+        description = "变量将与之进行比较的状态值"
     ) # type: ignore
 
     def __str__(self):
         var_name = self.var.strip()
         if not var_name:
-            raise ValueError(f'Var name is not set')
+            raise ValueError(f'变量名称未设置')
         if not self.state:
-            raise ValueError(f'State is not set')
+            raise ValueError(f'状态未设置')
         if self.type == 'EXTERNAL' and var_name.startswith('$'):
             pass  # Use var name as it is, without any formatting
         else:
@@ -60,7 +67,7 @@ class ToggleVarStateCondition(bpy.types.PropertyGroup):
 class ToggleVarStateObject(bpy.types.PropertyGroup):
     object: bpy.props.PointerProperty(
         type=bpy.types.Object,
-        description = "With default condition selected object will be visible only when this var has this state (aka if var value is equal to number in state name)",
+        description = "当选择默认条件时, 只有当这个变量处于这个状态 (即变量值等于状态名称中的数字) 时, 对象才会可见",
     ) # type: ignore
     conditions: bpy.props.CollectionProperty(type=ToggleVarStateCondition) # type: ignore
 
@@ -130,15 +137,15 @@ class ToggleVar(bpy.types.PropertyGroup):
     ) # type: ignore
     states: bpy.props.CollectionProperty(type=ToggleVarState) # type: ignore
     default_state: bpy.props.StringProperty(
-        name = "Default State",
+        name = "默认状态",
     ) # type: ignore
     hotkeys: bpy.props.StringProperty(
-        name = "Hotkeys",
-        description = "Keybinding used to switch var between its states. Use whitespace as separator for key combination and `;` to separate multiple keybindings for same var",
+        name = "热键",
+        description = "用于在变量的不同状态之间切换的键绑定. 使用空格作为组合键的分隔符, 并使用 ';' 分隔同一个变量的多个键绑定.",
     ) # type: ignore
     ui_expanded: bpy.props.BoolProperty(
-        name = "Toggle folding",
-        description = "Enter or exit edit mod for this var",
+        name = "切换折叠状态",
+        description = "进入或退出这个变量的编辑模式",
         default = True
     ) # type: ignore
     
@@ -243,26 +250,26 @@ class IniToggles(bpy.types.PropertyGroup):
     ) # type: ignore
 
     replace_vars_on_import: bpy.props.BoolProperty(
-        name="Replace Existing Vars On Import",
-        description="Replace already existing Ini Toggles Vars with same names (if disabled, duplicates will be skipped)",
+        name="在导入时替换现有变量",
+        description="用导入的变量替换已存在的同名 INI 切换逻辑变量 (如果禁用，重复项将被跳过)",
         default=True,
     ) # type: ignore
 
     clear_vars_on_import: bpy.props.BoolProperty(
-        name="Clear Existing Vars On Import",
-        description="Remove all existing Ini Toggles Vars before importing ones",
+        name="在导入时清除现有变量",
+        description="在导入变量之前移除所有现有的 INI 切换逻辑变量",
         default=False,
     ) # type: ignore
 
     hide_empty_states: bpy.props.BoolProperty(
-        name="Hide '-1' States Without Objects",
-        description="Hide empty '-1' states from UI to save space",
+        name="隐藏没有对象的\"-1\"状态",
+        description="从用户界面中隐藏空的\"-1\"状态, 以节省空间",
         default=False
     ) # type: ignore
 
     hide_default_conditions: bpy.props.BoolProperty(
-        name="Hide Default Conditions",
-        description="Hide default conditions from UI to save space",
+        name="隐藏默认条件",
+        description="从用户界面中隐藏默认条件, 以节省空间",
         default=False
     ) # type: ignore
 

@@ -5,7 +5,7 @@ from textwrap import dedent
 
 
 class WWMI_TOOLS_PT_SidePanelIniToggles(bpy.types.Panel):
-    bl_label = "Ini Toggles"
+    bl_label = "INI 切换"
     bl_idname = "WWMI_TOOLS_PT_INI_TOGGLES"
     bl_parent_id = "WWMI_TOOLS_PT_SIDEBAR"
     bl_options = {'DEFAULT_CLOSED'}
@@ -34,7 +34,7 @@ class WWMI_TOOLS_PT_SidePanelIniToggles(bpy.types.Panel):
         row.operator("wwmi_tools.collapse_toggle_vars", icon="TRIA_DOWN")
         row.operator("wwmi_tools.expand_toggle_vars", icon="TRIA_RIGHT")
 
-        layout.operator("wwmi_tools.add_toggle_var", text="Add Var", icon="ADD")
+        layout.operator("wwmi_tools.add_toggle_var", text="添加变量", icon="ADD")
 
         for i in reversed(range(len(cfg.ini_toggles.vars))):
             var = cfg.ini_toggles.vars[i]
@@ -87,7 +87,7 @@ class WWMI_TOOLS_PT_SidePanelIniToggles(bpy.types.Panel):
 
                         if not obj_item.object:
                             state_error = True
-                            error_text = f"ERROR: Object {k} is not set!"
+                            error_text = f"错误: 对象 {k} 未设置"
 
                         if obj_item.has_custom_conditions(var.name, state.name):
                             try:
@@ -101,9 +101,9 @@ class WWMI_TOOLS_PT_SidePanelIniToggles(bpy.types.Panel):
                     sub_row.alert = state_error
 
                     if var.default_state == state.name:
-                        sub_row.label(text=f"State {state.name} (default)")
+                        sub_row.label(text=f"状态 {state.name} (默认)")
                     else:
-                        sub_row.label(text=f"State {state.name}")
+                        sub_row.label(text=f"状态 {state.name}")
 
                     sub_row.alert = False
 
@@ -162,8 +162,8 @@ class WWMI_TOOLS_PT_SidePanelIniToggles(bpy.types.Panel):
 
 class WWMI_TOOLS_OT_CollapseToggleVars(bpy.types.Operator):
     bl_idname = "wwmi_tools.collapse_toggle_vars"
-    bl_label = "Collapse Vars"
-    bl_description = "Fold all vars in the list (exit edit mode for each var)"
+    bl_label = "折叠变量"
+    bl_description = "将列表中的所有变量折叠起来 (退出每个变量的编辑模式)"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -175,8 +175,8 @@ class WWMI_TOOLS_OT_CollapseToggleVars(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_ExpandToggleVars(bpy.types.Operator):
     bl_idname = "wwmi_tools.expand_toggle_vars"
-    bl_label = "Expand Vars"
-    bl_description = "Fold all vars in the list (enter edit mode for each var)"
+    bl_label = "展开变量"
+    bl_description = "将列表中的所有变量展开 (进入每个变量的编辑模式)"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -188,8 +188,8 @@ class WWMI_TOOLS_OT_ExpandToggleVars(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_AddToggleVar(bpy.types.Operator):
     bl_idname = "wwmi_tools.add_toggle_var"
-    bl_label = "Add Toggle Var"
-    bl_description = "Add new var to Ini Toggles, it will be used in mod.ini to control visibility of Objects listed in its States"
+    bl_label = "添加切换变量"
+    bl_description = "向 INI 切换逻辑中添加新变量， 它将在 mod.ini 中用于控制其状态中列出的对象的可见性"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -200,8 +200,8 @@ class WWMI_TOOLS_OT_AddToggleVar(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_RemoveToggleVar(bpy.types.Operator):
     bl_idname = "wwmi_tools.remove_toggle_var"
-    bl_label = "Remove Toggle Var"
-    bl_description = "Remove var from Ini Toggles"
+    bl_label = "移除切换变量"
+    bl_description = "从 INI 切换逻辑中移除变量"
     bl_options = {'REGISTER', 'UNDO'}
 
     var_index: bpy.props.IntProperty()  # type: ignore
@@ -214,8 +214,8 @@ class WWMI_TOOLS_OT_RemoveToggleVar(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_MoveToggleVar(bpy.types.Operator):
     bl_idname = "wwmi_tools.move_toggle_var"
-    bl_label = "Move Toggle Var"
-    bl_description = "Move var in Ini Toggles list"
+    bl_label = "移动切换变量"
+    bl_description = "在 INI 切换逻辑列表中移动变量"
     bl_options = {'REGISTER', 'UNDO'}
     
     var_index: bpy.props.IntProperty()  # type: ignore
@@ -239,8 +239,8 @@ class WWMI_TOOLS_OT_MoveToggleVar(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_EditToggleVar(bpy.types.Operator):
     bl_idname = "wwmi_tools.edit_toggle_var"
-    bl_label = "Edit Var"
-    bl_description = "Configure var hotkey and default state"
+    bl_label = "编辑变量"
+    bl_description = "配置变量的快捷键和默认状态"
     bl_options = {'REGISTER', 'UNDO'}
 
     var_index: bpy.props.IntProperty()  # type: ignore
@@ -249,7 +249,7 @@ class WWMI_TOOLS_OT_EditToggleVar(bpy.types.Operator):
         cfg = context.scene.wwmi_tools_settings
         layout = self.layout
         
-        layout.label(text="Toggle Var Settings:")
+        layout.label(text="切换变量设置: ")
 
         var = cfg.ini_toggles.vars[self.var_index]
 
@@ -261,7 +261,7 @@ class WWMI_TOOLS_OT_EditToggleVar(bpy.types.Operator):
         
         split.prop(var, "hotkeys")
 
-        op = split.operator("wm.url_open", text="Key Codes", icon='HELP')
+        op = split.operator("wm.url_open", text="虚拟键码(VK码)", icon='HELP')
         op.url = "https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes"
 
         row = box.row()
@@ -279,8 +279,8 @@ class WWMI_TOOLS_OT_EditToggleVar(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_AddToggleVarState(bpy.types.Operator):
     bl_idname = "wwmi_tools.add_var_state"
-    bl_label = "Add State"
-    bl_description = "Add new state to the var, each state may control visibility of multiple objects"
+    bl_label = "添加状态"
+    bl_description = "向变量添加新状态, 每个状态可以控制多个对象的可见性"
     bl_options = {'REGISTER', 'UNDO'}
 
     var_index: bpy.props.IntProperty()  # type: ignore
@@ -294,8 +294,8 @@ class WWMI_TOOLS_OT_AddToggleVarState(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_RemoveToggleVarState(bpy.types.Operator):
     bl_idname = "wwmi_tools.remove_var_state"
-    bl_label = "Remove State"
-    bl_description = "Remove this state from Ini Toggles Var"
+    bl_label = "移除状态"
+    bl_description = "从 INI 切换逻辑变量中移除这个状态"
     bl_options = {'REGISTER', 'UNDO'}
 
     var_index: bpy.props.IntProperty()  # type: ignore
@@ -310,8 +310,8 @@ class WWMI_TOOLS_OT_RemoveToggleVarState(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_MoveToggleVarState(bpy.types.Operator):
     bl_idname = "wwmi_tools.move_toggle_var_state"
-    bl_label = "Move Toggle Var State"
-    bl_description = "Move var state in the list"
+    bl_label = "移动切换变量状态"
+    bl_description = "在列表中移动变量状态"
     bl_options = {'REGISTER', 'UNDO'}
     
     var_index: bpy.props.IntProperty()  # type: ignore
@@ -337,7 +337,7 @@ class WWMI_TOOLS_OT_MoveToggleVarState(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_AddToggleVarStateObject(bpy.types.Operator):
     bl_idname = "wwmi_tools.add_var_state_object"
-    bl_label = "Add object to state to make it conditionally visible"
+    bl_label = "向状态添加对象, 以使其条件性地可见"
     bl_options = {'REGISTER', 'UNDO'}
 
     var_index: bpy.props.IntProperty()  # type: ignore
@@ -353,8 +353,8 @@ class WWMI_TOOLS_OT_AddToggleVarStateObject(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_RemoveToggleVarStateObject(bpy.types.Operator):
     bl_idname = "wwmi_tools.remove_var_state_object"
-    bl_label = "Remove State Object"
-    bl_description = "Remove this object from the state"
+    bl_label = "移除状态对象"
+    bl_description = "从这个状态中移除这个对象"
     bl_options = {'REGISTER', 'UNDO'}
 
     var_index: bpy.props.IntProperty()  # type: ignore
@@ -371,8 +371,8 @@ class WWMI_TOOLS_OT_RemoveToggleVarStateObject(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_EditVarStateObject(bpy.types.Operator):
     bl_idname = "wwmi_tools.edit_var_state_object"
-    bl_label = "Edit Conditions"
-    bl_description = "Open configuration window for custom conditions"
+    bl_label = "编辑条件"
+    bl_description = "打开自定义条件的配置窗口"
 
     var_index: bpy.props.IntProperty()  # type: ignore
     state_index: bpy.props.IntProperty()  # type: ignore
@@ -382,7 +382,7 @@ class WWMI_TOOLS_OT_EditVarStateObject(bpy.types.Operator):
         cfg = context.scene.wwmi_tools_settings
         layout = self.layout
         
-        layout.label(text="State Object Conditions:")
+        layout.label(text="状态中对象的条件: ")
 
         var = cfg.ini_toggles.vars[self.var_index]
         state = var.states[self.state_index]
@@ -445,7 +445,7 @@ class WWMI_TOOLS_OT_EditVarStateObject(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_AddToggleVarStateObjectCondition(bpy.types.Operator):
     bl_idname = "wwmi_tools.add_condition"
-    bl_label = "Add Condition"
+    bl_label = "添加条件"
     bl_options = {'REGISTER', 'UNDO'}
 
     var_index: bpy.props.IntProperty() # type: ignore
@@ -461,7 +461,7 @@ class WWMI_TOOLS_OT_AddToggleVarStateObjectCondition(bpy.types.Operator):
 
 class WWMI_TOOLS_OT_RemoveToggleVarStateObjectCondition(bpy.types.Operator):
     bl_idname = "wwmi_tools.remove_condition"
-    bl_label = "Remove Condition"
+    bl_label = "移除条件"
     bl_options = {'REGISTER', 'UNDO'}
 
     var_index: bpy.props.IntProperty() # type: ignore
@@ -479,8 +479,8 @@ class WWMI_TOOLS_OT_RemoveToggleVarStateObjectCondition(bpy.types.Operator):
 
 class WWMI_TOOLS_OpenIniTogglesImportExportEditor(bpy.types.Operator):
     bl_idname = "wwmi_tools.open_ini_toggles_import_export_editor"
-    bl_label = "Open Ini Toggles Import Export"
-    bl_description = "Open text editor window for Ini Toggles Vars import or export"
+    bl_label = "打开 INI 切换逻辑的导入导出"
+    bl_description = "打开文本编辑器窗口, 用于导入或导出 INI 切换逻辑变量"
 
     def execute(self, context):
         cfg = context.scene.wwmi_tools_settings
@@ -494,6 +494,7 @@ class WWMI_TOOLS_OpenIniTogglesImportExportEditor(bpy.types.Operator):
         
         text.clear()
         text.write(dedent("""
+            英文介绍:
             This tool allows to backup your toggles or copy them to another project aka .blend file
 
             To "[Import]" Ini Toggles Vars:
@@ -504,6 +505,17 @@ class WWMI_TOOLS_OpenIniTogglesImportExportEditor(bpy.types.Operator):
             To "[Export]" Ini Toggles Vars:
             1. Press "Export Ini Toggles" on side panel "Ini Toggles - WWMI Tools" to the right
             2. Copy generated export text
+                          
+            中文介绍 (AI翻译不一定准确, 必要时请以英文为准):
+            这个工具允许你备份你的切换逻辑, 或者将它们复制到另一个项目 (即 .blend 文件)
+            导入 INI 切换变量的步骤:
+            1. 通过中间面板上方的按钮创建新文本 (或清除当前文本)
+            2. 粘贴 INI 切换导出文本
+            3. 点击右侧 "INI 切换 - WWMI Tools" 侧边栏中的 "导入 INI 切换" 按钮
+     
+            导出 INI 切换变量的步骤:
+            1. 点击右侧 "INI 切换 - WWMI Tools" 侧边栏中的 "导出 INI 切换" 按钮
+            2. 复制生成的导出文本                      
         """))
         text.cursor_set(0)
 
@@ -531,8 +543,8 @@ class WWMI_TOOLS_OpenIniTogglesImportExportEditor(bpy.types.Operator):
 
 class WWMI_TOOLS_ExportIniToggles(bpy.types.Operator):
     bl_idname = "wwmi_tools.export_ini_toggles"
-    bl_label = "Export Ini Toggles"
-    bl_description = "Output Ini Toggles Vars as importable .json text to IniTogglesExportText file of this Text Editor"
+    bl_label = "导出 INI 切换"
+    bl_description = "将 INI 切换逻辑变量作为可导入的 .json 文本输出到当前文本编辑器的 IniTogglesExportText 文件中"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -561,8 +573,8 @@ class WWMI_TOOLS_ExportIniToggles(bpy.types.Operator):
 
 class WWMI_TOOLS_ImportIniToggles(bpy.types.Operator):
     bl_idname = "wwmi_tools.import_ini_toggles"
-    bl_label = "Import Ini Toggles"
-    bl_description = "Import Ini Toggles Vars from .json text of current file"
+    bl_label = "导入 INI 切换"
+    bl_description = "从当前文件的 .json 文本中导入 INI 切换逻辑变量"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -577,20 +589,20 @@ class WWMI_TOOLS_ImportIniToggles(bpy.types.Operator):
                         break
         try:
             if text is None:
-                raise ValueError(f'Text editor area has no text file open!')
+                raise ValueError(f'文本编辑器区域没有打开文本文件!')
             try:
                 data = json.loads(text.as_string())
             except Exception as e:
-                raise ValueError(f'Unknown data format (not a json dict)') from e
+                raise ValueError(f'未知数据格式 (不是 JSON 字典)') from e
             imported_vars_count, skipped_vars_count = cfg.ini_toggles.import_vars(
                 data, cfg.ini_toggles.replace_vars_on_import, cfg.ini_toggles.clear_vars_on_import
             )
-            msg = f'Imported {imported_vars_count} Ini Toggle Vars'
+            msg = f'已导入 {imported_vars_count} INI 切换逻辑变量'
             if skipped_vars_count > 0:
-                msg += f' (skipped {skipped_vars_count} duplicates)'
+                msg += f' (跳过 {skipped_vars_count} 重复项)'
             self.report({'INFO'}, msg)
         except Exception as e:
-            self.report({'ERROR'}, f'Failed to import Ini Toggle Vars: {e}')
+            self.report({'ERROR'}, f'导入 INI 切换逻辑变量失败: {e}')
             # Roll back the operator's changes
             bpy.ops.ed.undo()
             return {'CANCELLED'}
@@ -599,7 +611,7 @@ class WWMI_TOOLS_ImportIniToggles(bpy.types.Operator):
     
 
 class WWMI_TOOLS_PT_TEXT_EDITOR_IniToggles(bpy.types.Panel):
-    bl_label = "Ini Toggles - WWMI Tools"
+    bl_label = "INI 切换 - WWMI Tools"
     bl_space_type = "TEXT_EDITOR"
     bl_region_type = "UI"
     bl_category = "Text"
