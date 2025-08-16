@@ -67,6 +67,12 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         update=lambda self, context: self.on_update_clear_error('frame_dump_folder'),
     ) # type: ignore
 
+    allow_missing_shapekeys: BoolProperty(
+        name="提取缺少形态键的对象",
+        description="不要跳过缺少形态键数据的对象的提取 (通常用户应该在某些面部动画期间重新转储)",
+        default=False,
+    ) # type: ignore
+
     skip_small_textures: BoolProperty(
         name="纹理过滤: 跳过小尺寸纹理",
         description="跳过小于指定尺寸的纹理",
@@ -75,7 +81,7 @@ class WWMI_Settings(bpy.types.PropertyGroup):
 
     skip_small_textures_size: IntProperty(
         name="最小尺寸 (KB)",
-        description="Minimal texture size in KB. Default is 256KB",
+        description="最小纹理大小 (以 KB 为单位). 默认值为 256KB",
         default=256,
     ) # type: ignore
 

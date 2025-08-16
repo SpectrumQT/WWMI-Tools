@@ -25,7 +25,7 @@ from ..migoto_io.dump_parser.data_collector import DataMap, DataCollector
 from .data_extractor import DataExtractor
 from .shapekey_builder import ShapeKeyBuilder
 from .component_builder import ComponentBuilder
-from .output_builder import OutputBuilder, TextureFilter
+from .output_builder import OutputBuilder, TextureFilter, ObjectData
 
 
 @dataclass
@@ -115,6 +115,17 @@ configuration = Configuration(
                 ],
                 force_stride=True)),
 
+        'SKELETON_DATA_CB3': DataMap([Source('DRAW_VS', ShaderType.Vertex, SlotType.ConstantBuffer, SlotId(3))]),
+
+        'SKELETON_DATA_BUFFER_CB3': DataMap([
+                Source('DRAW_VS', ShaderType.Vertex, SlotType.ConstantBuffer, SlotId(3)),
+            ],
+            BufferLayout(
+                semantics=[
+                    BufferSemantic(AbstractSemantic(Semantic.RawData, 0), DXGIFormat.R32_FLOAT, stride=48),
+                ],
+                force_stride=True)),
+
         'POSE_CB': DataMap([
                 Source('DRAW_VS', ShaderType.Vertex, SlotType.ConstantBuffer, SlotId(0)),
             ],
@@ -151,6 +162,13 @@ configuration = Configuration(
                 BufferSemantic(AbstractSemantic(Semantic.Color, 1), DXGIFormat.R16G16_UNORM),
                 BufferSemantic(AbstractSemantic(Semantic.TexCoord, 1), DXGIFormat.R16G16_FLOAT),
                 BufferSemantic(AbstractSemantic(Semantic.TexCoord, 2), DXGIFormat.R16G16_FLOAT),
+            ])),
+        'TEXCOORD_BUFFER_STATIC': DataMap([
+                Source('DRAW_VS', ShaderType.Empty, SlotType.VertexBuffer, SlotId(2), file_ext='buf'),
+            ],
+            BufferLayout([
+                BufferSemantic(AbstractSemantic(Semantic.TexCoord, 0), DXGIFormat.R16G16_FLOAT),
+                BufferSemantic(AbstractSemantic(Semantic.TexCoord, 1), DXGIFormat.R16G16_FLOAT),
             ])),
         'COLOR_BUFFER': DataMap([
                 Source('DRAW_VS', ShaderType.Empty, SlotType.VertexBuffer, SlotId(3), file_ext='buf'),
@@ -199,13 +217,19 @@ configuration = Configuration(
 )
 
 
-def write_objects(output_directory, objects):
+def write_objects(output_directory, objects: Dict[str, ObjectData], allow_missing_shapekeys = False):
     output_directory = Path(output_directory)
 
     output_directory.mkdir(parents=True, exist_ok=True)
 
     for object_hash, object_data in objects.items():
         object_name = object_hash
+
+        if object_data.shapekeys.offsets_hash and not object_data.shapekeys.shapekey_offsets:
+            if allow_missing_shapekeys:
+                object_name += '_MISSING_SHAPEKEYS'
+            else:
+                continue
 
         object_directory = output_directory / object_name
         object_directory.mkdir(parents=True, exist_ok=True)
@@ -309,9 +333,11 @@ def extract_frame_data(cfg):
         )
     )
 
-    write_objects(resolve_path(cfg.extract_output_folder), output_builder.objects)
+    write_objects(resolve_path(cfg.extract_output_folder), output_builder.objects, cfg.allow_missing_shapekeys)
 
     print(f"Execution time: %s seconds" % (time.time() - start_time))
+
+    return output_builder
 
 
 def get_dir_path():

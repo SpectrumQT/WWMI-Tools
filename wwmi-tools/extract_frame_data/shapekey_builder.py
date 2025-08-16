@@ -11,11 +11,13 @@ from .data_extractor import ShapeKeyData, DrawData
 @dataclass
 class ShapeKeys:
     offsets_hash: str
-    scale_hash: str
-    dispatch_y: int
-    shapekey_offsets: list
-    shapekeys_index: List[Dict[int, List[float]]]  # ShapeKey ID based indexed list of {VertexID: VertexOffsets}
-    indexed_shapekeys: Dict[int, Dict[int, List[float]]]  # Vertex ID based indexed dict of {ShapeKeyID: VertexOffsets}
+    scale_hash: str = ''
+    dispatch_y: int = 0
+    shapekey_offsets: list = field(default_factory=lambda: [])
+    # ShapeKey ID based indexed list of {VertexID: VertexOffsets}
+    shapekeys_index: List[Dict[int, List[float]]] = field(default_factory=lambda: [])
+    # Vertex ID based indexed dict of {ShapeKeyID: VertexOffsets}
+    indexed_shapekeys: Dict[int, Dict[int, List[float]]] = field(default_factory=lambda: {})
 
     def get_shapekey_ids(self, vertex_offset, vertex_count):
         """

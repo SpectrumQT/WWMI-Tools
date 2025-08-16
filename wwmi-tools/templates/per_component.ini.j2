@@ -176,7 +176,9 @@ vb0 = ResourcePositionBuffer
 {%- endif %}
 vb1 = ResourceVectorBuffer
 vb2 = ResourceTexcoordBuffer
+{%- if "Color" in buffers.keys() %}
 vb3 = ResourceColorBuffer
+{%- endif %}
 vb4 = ResourceBlendBuffer
 {%- if unrestricted_custom_shape_keys and merged_object.shapekeys.vertex_count > 0 %}
 vb6 = null

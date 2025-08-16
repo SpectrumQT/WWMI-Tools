@@ -319,7 +319,9 @@ vb0 = ResourcePositionBuffer
 {%- endif %}
 vb1 = ResourceVectorBuffer
 vb2 = ResourceTexcoordBuffer
+{%- if "Color" in buffers.keys() %}
 vb3 = ResourceColorBuffer
+{%- endif %}
 {% if merged_object.blend_remap_count == 0 -%}
 vb4 = ResourceBlendBuffer
 {{note("Pass merged skeleton is resource matches marked Bones Data CB")}}

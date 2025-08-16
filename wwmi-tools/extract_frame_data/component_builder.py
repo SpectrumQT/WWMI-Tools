@@ -61,11 +61,15 @@ class MeshObject:
                 self.vb0_hash, ', '.join(vb0_hashes)))
         self.vb0_hash = list(vb0_hashes)[0]
 
-        cb4_hash = set([component.draw_data.cb4_hash for component in self.components_data])
-        if len(cb4_hash) > 1:
-            raise ValueError(f'components CB4 hash mismatch for object %s (hashes: %s)' % (
-                self.vb0_hash, ', '.join(cb4_hash)))
-        self.cb4_hash = list(cb4_hash)[0]
+        cb4_hashes = [component.draw_data.cb4_hash for component in self.components_data]
+        common_cb4_hash = max(set(cb4_hashes), key=cb4_hashes.count)
+        for component_id, component in enumerate(self.components_data):
+            if component.draw_data.cb4_hash != common_cb4_hash:
+                if component.draw_data.cb3_hash != common_cb4_hash:
+                    raise ValueError(f'component %d CB4 hash mismatch for object %s (common hash: %s)' % (component_id, self.vb0_hash, common_cb4_hash))
+                component.draw_data.skeleton_data = component.draw_data.skeleton_data_cb3
+
+        self.cb4_hash = common_cb4_hash
 
     def import_component_data(self, draw_data: DrawData):
         self.components_data.append(MeshComponentData(
@@ -113,6 +117,12 @@ class MeshObject:
             vb_layout.merge(draw_data.blend_buffer.layout)
             vb_layout.merge(draw_data.color_buffer.layout)
             vb_layout.merge(draw_data.texcoord_buffer.layout)
+        elif len(draw_data.texcoord_buffer.layout.semantics) == 2:
+            vb_layout = BufferLayout([])
+            vb_layout.merge(draw_data.position_buffer.layout)
+            vb_layout.merge(draw_data.vector_buffer.layout)
+            vb_layout.merge(draw_data.blend_buffer.layout)
+            vb_layout.merge(draw_data.texcoord_buffer.layout)
 
         shapekey_buffer = None
         if self.shapekey_data is not None:
@@ -128,8 +138,9 @@ class MeshObject:
 
         vb.import_buffer(draw_data.position_buffer)
         vb.import_buffer(draw_data.vector_buffer)
-        vb.import_buffer(draw_data.texcoord_buffer)
-        if draw_data.color_buffer is not None:
+        if draw_data.texcoord_buffer.num_elements != 0:
+            vb.import_buffer(draw_data.texcoord_buffer)
+        if draw_data.color_buffer.num_elements != 0:
             vb.import_buffer(draw_data.color_buffer)
         vb.import_buffer(draw_data.blend_buffer)
 
@@ -240,6 +251,16 @@ class ComponentBuilder:
 
             if draw_data is None:
                 raise ValueError(f'no draw data found for component {":".join(draw_guid)}')
+            
+            # if draw_data.texcoord_buffer.num_elements == 0:
+            #     draw_data.texcoord_buffer.extend(draw_data.position_buffer.num_elements)
+                # print(f'Skipped incomplete object {draw_data.vb_hash} (no texcoord_buffer)')
+                # continue
+
+            # if draw_data.color_buffer.num_elements == 0:
+            #     draw_data.color_buffer.extend(draw_data.position_buffer.num_elements)
+                # print(f'Skipped incomplete object {draw_data.vb_hash} (no color_buffer)')
+                # continue
 
             if vb0_hash not in self.mesh_objects:
                 self.mesh_objects[vb0_hash] = MeshObject()

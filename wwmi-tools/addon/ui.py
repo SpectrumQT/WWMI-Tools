@@ -1,6 +1,9 @@
 import subprocess
 import bpy
 
+from textwrap import dedent
+
+
 from bpy.props import BoolProperty, StringProperty, PointerProperty, IntProperty, FloatProperty, CollectionProperty
 
 from .. import bl_info
@@ -420,7 +423,18 @@ class WWMI_ExtractFrameData(bpy.types.Operator):
 
             clear_error(cfg)
 
-            extract_frame_data(cfg)
+            output = extract_frame_data(cfg)
+            
+            objects_missing_shapekeys = []
+            for object_hash, object_data in output.objects.items():
+                if object_data.shapekeys.offsets_hash and not object_data.shapekeys.shapekey_offsets:
+                    objects_missing_shapekeys.append(object_hash)
+            if len(objects_missing_shapekeys) > 0:
+                self.report({'WARNING'}, dedent(f"""
+                    Objects {', '.join(objects_missing_shapekeys)} were skipped:
+                    Frame dump is missing shapekeys data!
+                    Try to make another dump with ongoing facial animation.
+                """).strip())
             
         except ConfigError as e:
             self.report({'ERROR'}, str(e))
@@ -590,5 +604,6 @@ class DebugPanel(bpy.types.Panel):
         layout = self.layout
         cfg = context.scene.wwmi_tools_settings
 
+        layout.row().prop(cfg, 'allow_missing_shapekeys')
         layout.row().prop(cfg, 'remove_temp_object')
         layout.row().prop(cfg, 'export_on_reload')

@@ -27,6 +27,7 @@ class ShapeKeyData:
 @dataclass
 class DrawData:
     vb_hash: str
+    cb3_hash : str
     cb4_hash: str
     vertex_offset: int
     vertex_count: int
@@ -39,6 +40,7 @@ class DrawData:
     color_buffer: ByteBuffer
     blend_buffer: ByteBuffer
     skeleton_data: ByteBuffer
+    skeleton_data_cb3: ByteBuffer
     shapekey_hash: Union[str, None]
     textures: List[ResourceDescriptor]
 
@@ -165,13 +167,17 @@ class DataExtractor:
                 if color_buffer.num_elements == position_buffer.num_elements:
                     color_buffer = color_buffer.get_fragment(vertex_offset, vertex_count)
                 else:
-                    color_buffer = None
+                    color_buffer = ByteBuffer(layout=color_buffer.layout)
 
                 texcoord_buffer = branch_call.resources['TEXCOORD_BUFFER']
                 if texcoord_buffer.num_elements == position_buffer.num_elements:
                     texcoord_buffer = texcoord_buffer.get_fragment(vertex_offset, vertex_count)
                 else:
-                    texcoord_buffer = None
+                    texcoord_buffer_static = branch_call.resources['TEXCOORD_BUFFER_STATIC']
+                    if texcoord_buffer_static.num_elements == position_buffer.num_elements:
+                        texcoord_buffer = texcoord_buffer_static
+                    else:
+                        texcoord_buffer = ByteBuffer(layout=texcoord_buffer.layout)
 
                 textures = []
                 for texture_id in range(16):
@@ -181,6 +187,7 @@ class DataExtractor:
 
                 draw_data = DrawData(
                     vb_hash=branch_call.resources['POSE_INPUT_0'].hash,
+                    cb3_hash=branch_call.resources['SKELETON_DATA_CB3'].hash,
                     cb4_hash=branch_call.resources['SKELETON_DATA'].hash,
                     vertex_offset=vertex_offset,
                     vertex_count=vertex_count,
@@ -193,7 +200,7 @@ class DataExtractor:
                     texcoord_buffer=texcoord_buffer,
                     color_buffer=color_buffer,
                     blend_buffer=blend_buffer.get_fragment(vertex_offset, vertex_count),
-                    skeleton_data=branch_call.resources['SKELETON_DATA_BUFFER'],
+                    skeleton_data_cb3=branch_call.resources['SKELETON_DATA_BUFFER_CB3'],
                     textures=textures,
                     shapekey_hash=shapekey_hash,
                 )
@@ -206,10 +213,10 @@ class DataExtractor:
                     if index_buffer.num_elements != cached_draw_data.index_buffer.num_elements:
                         raise ValueError(f'index data mismatch for DRAW_VS')
 
-                    if color_buffer is not None:
+                    if color_buffer.num_elements != 0:
                         cached_draw_data.color_buffer = color_buffer
 
-                    if texcoord_buffer is not None:
+                    if texcoord_buffer.num_elements != 0:
                         cached_draw_data.texcoord_buffer = texcoord_buffer
 
                     cached_draw_data.textures.extend(textures)
