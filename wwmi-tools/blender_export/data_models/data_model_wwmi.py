@@ -73,7 +73,7 @@ class DataModelWWMI(DataModel):
                  obj: bpy.types.Object, 
                  mesh: bpy.types.Mesh, 
                  excluded_buffers: List[str],
-                 buffers_format: Optional[Dict[Semantic, DXGIFormat]] = None,
+                 buffers_format: Optional[Dict[str, BufferLayout]] = None,
                  mirror_mesh: bool = False,
                  object_index_layout: Optional[List[int]] = None) -> Tuple[Dict[str, NumpyBuffer], int, Optional[List[int]]]:
 

@@ -107,7 +107,7 @@ class DataModel:
                  obj: bpy.types.Object, 
                  mesh: bpy.types.Mesh, 
                  excluded_buffers: List[str], 
-                 buffers_format: Optional[Dict[Semantic, DXGIFormat]] = None,
+                 buffers_format: Optional[Dict[str, BufferLayout]] = None,
                  mirror_mesh: bool = False,
                  object_index_layout: Optional[List[int]] = None) -> Tuple[Dict[str, NumpyBuffer], int, Optional[List[int]]]:
         
@@ -124,7 +124,7 @@ class DataModel:
                       index_data: numpy.ndarray, 
                       vertex_buffer: NumpyBuffer, 
                       excluded_buffers: List[str],
-                      buffers_format: Dict[Semantic, DXGIFormat]) -> Dict[str, NumpyBuffer]:
+                      buffers_format: Dict[str, BufferLayout]) -> Dict[str, NumpyBuffer]:
         
         start_time = time.time()
 
@@ -156,7 +156,7 @@ class DataModel:
                     collection: bpy.types.Collection, 
                     mesh: bpy.types.Mesh, 
                     excluded_buffers: List[str], 
-                    buffers_format: Dict[Semantic, DXGIFormat],
+                    buffers_format: Dict[str, BufferLayout],
                     mirror_mesh: bool = False,
                     cache_index_data: bool = False):
         
@@ -165,7 +165,7 @@ class DataModel:
         return index_data, vertex_buffer
 
     def make_export_layout(self, 
-                           buffers_format: Dict[Semantic, DXGIFormat],
+                           buffers_format: Dict[str, BufferLayout],
                            excluded_buffers: List[str]):
         fetch_loop_data = False
 
