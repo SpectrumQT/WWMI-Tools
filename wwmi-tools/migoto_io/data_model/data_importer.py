@@ -217,6 +217,10 @@ class BlenderDataImporter:
             shapekey = obj.shape_key_add(name=f'Deform {shapekey_id}')
             shapekey.interpolation = 'KEY_LINEAR'
 
+            if bpy.app.version >= (5, 0):
+                # Blender 5.0 defaults shapekeys to 1.0 
+                shapekey.value = 0
+
             position_offsets = numpy.array(offsets, dtype=numpy.float32).reshape(-1, 3)
 
             # Apply shapekey vertex position offsets
