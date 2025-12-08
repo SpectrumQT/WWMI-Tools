@@ -119,25 +119,34 @@ class BlenderDataImporter:
         
     def import_vertex_groups(self, 
                              obj: bpy.types.Object, 
-                             vg_indices: Dict[int, numpy.ndarray], 
-                             vg_weights: Dict[int, numpy.ndarray]):
+                             semantic_vg_indices: Dict[int, numpy.ndarray], 
+                             semantic_vg_weights: Dict[int, numpy.ndarray]):
         
-        assert (len(vg_indices) == len(vg_weights))
+        assert (len(semantic_vg_indices) == len(semantic_vg_weights))
 
-        num_vertex_groups = max([indices.max() for indices in vg_indices.values()])
+        vg_index_offset = 0
 
-        for i in range(num_vertex_groups + 1):
-            obj.vertex_groups.new(name=str(i))
+        for semantic_index in sorted(semantic_vg_indices.keys()):
 
-        for semantic_index in sorted(vg_indices.keys()):
-            indices = vg_indices[semantic_index]
-            weights = vg_weights[semantic_index]
+            vg_indices = semantic_vg_indices[semantic_index]
+            vg_weights = semantic_vg_weights[semantic_index]
 
-        for vertex_id, (indexes, weights) in enumerate(zip(indices, weights)):
-            for index, weight in zip(indexes, weights):
-                if weight == 0.0:
-                    continue
-                obj.vertex_groups[index].add((vertex_id,), weight, 'REPLACE')
+            assert (len(vg_indices) == len(vg_weights))
+
+            num_vertex_groups = vg_indices.max()
+
+            semantic_prefix = '' if semantic_index == 0 else f'{semantic_index}_'
+            
+            for i in range(num_vertex_groups + 1):
+                obj.vertex_groups.new(name=semantic_prefix+str(i))
+
+            for vertex_id, (indices, weights) in enumerate(zip(vg_indices, vg_weights)):
+                for index, weight in zip(indices, weights):
+                    if weight == 0.0:
+                        continue
+                    obj.vertex_groups[vg_index_offset+index].add((vertex_id,), weight, 'REPLACE')
+            
+            vg_index_offset += num_vertex_groups
 
     def import_colors(self, 
                       mesh: bpy.types.Mesh, 
