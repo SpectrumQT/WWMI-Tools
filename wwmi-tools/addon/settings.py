@@ -52,7 +52,7 @@ class WWMI_Settings(bpy.types.PropertyGroup):
             ('TOOLS_MODE', 'Toolbox', 'Bunch of useful object actions'),
         ],
         update=lambda self, context: clear_error(self),
-        default=0,
+        default='EXTRACT_FRAME_DATA',
     ) # type: ignore
 
     ########################################
@@ -65,12 +65,6 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         default='',
         subtype="DIR_PATH",
         update=lambda self, context: self.on_update_clear_error('frame_dump_folder'),
-    ) # type: ignore
-
-    allow_missing_shapekeys: BoolProperty(
-        name="Extract Objects With Missing Shapekeys",
-        description="Do not skip extraction of objects with missing shapekeys data (normally user should re-dump during some facial animation).",
-        default=False,
     ) # type: ignore
 
     skip_small_textures: BoolProperty(
@@ -116,6 +110,16 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         update=lambda self, context: self.on_update_clear_error('object_source_folder'),
     ) # type: ignore
 
+    color_storage: bpy.props.EnumProperty(
+        name="Vertex Colors",
+        description="Controls how color data is handled",
+        items=[
+            ('LINEAR', 'Linear', 'Display vertex colors as they actually are and store them with full float precision. Handle colors via `color_attributes`'),
+            ('LEGACY', 'sRGB (legacy)', 'Display vertex colors as sRGB shifted and store them with 8-bit float precision. Handle colors via deprecated `vertex_colors`'),
+        ],
+        default='LINEAR',
+    ) # type: ignore
+
     import_skeleton_type: bpy.props.EnumProperty(
         name="Skeleton",
         description="Controls the way of Vertex Groups handling",
@@ -138,20 +142,12 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         default=False,
     ) # type: ignore
 
-    color_storage: bpy.props.EnumProperty(
-        name="Vertex Colors",
-        description="Controls how color data is handled",
-        items=[
-            ('LINEAR', 'Linear', 'Display vertex colors as they actually are and store them with full float precision. Handle colors via `color_attributes`'),
-            ('LEGACY', 'sRGB (legacy)', 'Display vertex colors as sRGB shifted and store them with 8-bit float precision. Handle colors via deprecated `vertex_colors`'),
-        ],
-        default='LINEAR',
-    ) # type: ignore
-
     ########################################
     # Mod Export
     ########################################
-        
+    
+    # General
+
     component_collection: PointerProperty(
         name="Components",
         description="Collection with WWMI object's components named like `Component 0` or `Component_1 RedHat` or `Dat Gas cOmPoNENT- 3 OMG` (lookup RegEx: r'.*component[_ -]*(\d+).*')",
@@ -167,43 +163,6 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         subtype="DIR_PATH",
         update=lambda self, context: self.on_update_clear_error('mod_output_folder'),
     ) # type: ignore
-    
-    apply_modifiers: BoolProperty(
-        name="Apply Modifiers",
-        description="Apply all modifiers to temporary copy of the merged object",
-        default=False,
-    ) # type: ignore
-
-    mod_name: StringProperty(
-        name="Mod Name",
-        description="Name of mod to be displayed in user notifications and mod managers",
-        default='Unnamed Mod',
-    ) # type: ignore
-
-    mod_author: StringProperty(
-        name="Author Name",
-        description="Name of mod author to be displayed in user notifications and mod managers",
-        default='Unknown Author',
-    ) # type: ignore
-
-    mod_desc: StringProperty(
-        name="Mod Description",
-        description="Short mod description to be displayed in user notifications and mod managers",
-        default='',
-    ) # type: ignore
-
-    mod_link: StringProperty(
-        name="Mod Link",
-        description="Link to mod web page to be displayed in user notifications and mod managers",
-        default='',
-    ) # type: ignore
-
-    mod_logo: StringProperty(
-        name="Mod Logo",
-        description="Texture with 512x512 size and .dds extension (BC7 SRGB) to be displayed in user notifications and mod managers, will be placed to /Textures/Logo.dds",
-        default='',
-        subtype="FILE_PATH",
-    ) # type: ignore
 
     mod_skeleton_type: bpy.props.EnumProperty(
         name="Skeleton",
@@ -215,11 +174,81 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         default=0,
     ) # type: ignore
 
+    apply_all_modifiers: BoolProperty(
+        name="Apply All Modifiers",
+        description="Automatically apply all existing modifiers to temporary copies of each object",
+        default=False,
+    ) # type: ignore
+
+    copy_textures: BoolProperty(
+        name="Copy Textures",
+        description="Copy texture files to export folder",
+        default=True,
+    ) # type: ignore
+
+    write_ini: BoolProperty(
+        name="Write Mod INI",
+        description="Write new .ini to export folder",
+        default=True,
+    ) # type: ignore
+
+    comment_ini: BoolProperty(
+        name="Comment INI code",
+        description="Add comments to INI code, useful if you want to get better idea how it works",
+        default=False,
+    ) # type: ignore
+    
+    ignore_nested_collections: BoolProperty(
+        name="Ignore Nested Collections",
+        description="If enabled, objects inside nested collections inside Components collection won't be exported",
+        default=True,
+    ) # type: ignore
+
+    ignore_hidden_collections: BoolProperty(
+        name="Ignore Hidden Collections",
+        description="If enabled, objects from hidden nested collections inside Components collection won't be exported",
+        default=True,
+    ) # type: ignore
+    
+    ignore_hidden_objects: BoolProperty(
+        name="Ignore Hidden Objects",
+        description="If enabled, hidden objects inside Components collection won't be exported",
+        default=False,
+    ) # type: ignore
+    
+    ignore_muted_shape_keys: BoolProperty(
+        name="Ignore Muted Shape Keys",
+        description="If enabled, muted (unchecked) shape keys won't be exported",
+        default=True,
+    ) # type: ignore
+
+    # Advanced
+    
+    add_missing_vertex_groups: BoolProperty(
+        name="Add Missing Vertex Groups",
+        description="Fill gaps in Vertex Groups list based on VG names (i.e. add group '1' between '0' and '2' if it's missing)",
+        default=True,
+    ) # type: ignore
+
+    unrestricted_custom_shape_keys: BoolProperty(
+        name="Unrestricted Custom Shape Keys",
+        description="Allows to use Custom Shape Keys for components that don't have them by default. Generates extra mod.ini logic",
+        default=False,
+    ) # type: ignore
+
+    skeleton_scale: FloatProperty(
+        name="Skeleton Scale",
+        description="Scales model in-game (default is 1.0). Not supported for Per-Component Skeleton",
+        default=1.0,
+    ) # type: ignore
+
     partial_export: BoolProperty(
         name="Partial Export",
         description="For advanced usage only. Allows to export only selected buffers. Speeds up export when you're sure that there were no changes to certain data since previous export. Disables INI generation and assets copying",
         default=False,
     ) # type: ignore
+
+    # Partial Export
 
     export_index: BoolProperty(
         name="Index Buffer",
@@ -262,84 +291,41 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         description="Contains shape keys data",
         default=True,
     ) # type: ignore
-    
-    ignore_nested_collections: BoolProperty(
-        name="Ignore Nested Collections",
-        description="If enabled, objects inside nested collections inside Components collection won't be exported",
-        default=True,
+
+    # Mod Info
+
+    mod_name: StringProperty(
+        name="Mod Name",
+        description="Name of mod to be displayed in user notifications and mod managers",
+        default='Unnamed Mod',
     ) # type: ignore
 
-    ignore_hidden_collections: BoolProperty(
-        name="Ignore Hidden Collections",
-        description="If enabled, objects from hidden nested collections inside Components collection won't be exported",
-        default=True,
-    ) # type: ignore
-    
-    ignore_hidden_objects: BoolProperty(
-        name="Ignore Hidden Objects",
-        description="If enabled, hidden objects inside Components collection won't be exported",
-        default=False,
-    ) # type: ignore
-    
-    ignore_muted_shape_keys: BoolProperty(
-        name="Ignore Muted Shape Keys",
-        description="If enabled, muted (unchecked) shape keys won't be exported",
-        default=True,
+    mod_author: StringProperty(
+        name="Author Name",
+        description="Name of mod author to be displayed in user notifications and mod managers",
+        default='Unknown Author',
     ) # type: ignore
 
-    apply_all_modifiers: BoolProperty(
-        name="Apply All Modifiers",
-        description="Automatically apply all existing modifiers to temporary copies of each object",
-        default=False,
+    mod_desc: StringProperty(
+        name="Mod Description",
+        description="Short mod description to be displayed in user notifications and mod managers",
+        default='',
     ) # type: ignore
 
-    copy_textures: BoolProperty(
-        name="Copy Textures",
-        description="Copy texture files to export folder",
-        default=True,
+    mod_link: StringProperty(
+        name="Mod Link",
+        description="Link to mod web page to be displayed in user notifications and mod managers",
+        default='',
     ) # type: ignore
 
-    write_ini: BoolProperty(
-        name="Write Mod INI",
-        description="Write new .ini to export folder",
-        default=True,
+    mod_logo: StringProperty(
+        name="Mod Logo",
+        description="Texture with 512x512 size and .dds extension (BC7 SRGB) to be displayed in user notifications and mod managers, will be placed to /Textures/Logo.dds",
+        default='',
+        subtype="FILE_PATH",
     ) # type: ignore
 
-    comment_ini: BoolProperty(
-        name="Comment INI code",
-        description="Add comments to INI code, useful if you want to get better idea how it works",
-        default=False,
-    ) # type: ignore
-
-    skeleton_scale: FloatProperty(
-        name="Skeleton Scale",
-        description="Scales model in-game (default is 1.0). Not supported for Per-Component Skeleton",
-        default=1.0,
-    ) # type: ignore
-
-    unrestricted_custom_shape_keys: BoolProperty(
-        name="Unrestricted Custom Shape Keys",
-        description="Allows to use Custom Shape Keys for components that don't have them by default. Generates extra mod.ini logic",
-        default=False,
-    ) # type: ignore
-    
-    add_missing_vertex_groups: BoolProperty(
-        name="Add Missing Vertex Groups",
-        description="Fill gaps in Vertex Groups list based on VG names (i.e. add group '1' between '0' and '2' if it's missing)",
-        default=True,
-    ) # type: ignore
-
-    remove_temp_object: BoolProperty(
-        name="Remove Temp Object",
-        description="Remove temporary object built from merged components after export. May be useful to uncheck for debug purposes",
-        default=True,
-    ) # type: ignore
-
-    export_on_reload: BoolProperty(
-        name="Export On Reload",
-        description="Trigger mod export on addon reload. Useful for export debugging.",
-        default=False,
-    ) # type: ignore
+    # Ini Template
 
     use_custom_template: BoolProperty(
         name="Use Custom Template",
@@ -373,17 +359,7 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         update=lambda self, context: self.on_update_clear_error('custom_template_path'),
     ) # type: ignore
 
-    last_error_setting_name: StringProperty(
-        name="Last Error Setting Name",
-        description="Name of setting property which was cause of last error.",
-        default='component_collection',
-    ) # type: ignore
-
-    last_error_text: StringProperty(
-        name="Last Error Text",
-        description="Text of last error.",
-        default='Collection must be filled!',
-    ) # type: ignore
+    # Ini Toggles
 
     use_ini_toggles: BoolProperty(
         name="Use Ini Toggles",
@@ -395,6 +371,39 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         type=IniToggles,
     ) # type: ignore
 
+    # Debug
+
+    allow_missing_shapekeys: BoolProperty(
+        name="Extract Objects With Missing Shapekeys",
+        description="Do not skip extraction of objects with missing shapekeys data (normally user should re-dump during some facial animation).",
+        default=False,
+    ) # type: ignore
+
+    remove_temp_object: BoolProperty(
+        name="Remove Temp Object",
+        description="Remove temporary object built from merged components after export. May be useful to uncheck for debug purposes",
+        default=True,
+    ) # type: ignore
+
+    export_on_reload: BoolProperty(
+        name="Export On Reload",
+        description="Trigger mod export on addon reload. Useful for export debugging.",
+        default=False,
+    ) # type: ignore
+
+    # Service
+
+    last_error_setting_name: StringProperty(
+        name="Last Error Setting Name",
+        description="Name of setting property which was cause of last error.",
+        default='component_collection',
+    ) # type: ignore
+
+    last_error_text: StringProperty(
+        name="Last Error Text",
+        description="Text of last error.",
+        default='Collection must be filled!',
+    ) # type: ignore
 
 
 class Preferences(bpy.types.AddonPreferences):
