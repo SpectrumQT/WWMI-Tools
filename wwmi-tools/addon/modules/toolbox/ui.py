@@ -191,3 +191,18 @@ class WWMI_ApplyMergedObjectSculpt(bpy.types.Operator):
             
         return {'FINISHED'}
     
+
+class WWMI_ApplyMergedObjectSculptWithShapekeys(bpy.types.Operator):
+    bl_idname = "wwmi_tools.apply_merged_object_sculpt_with_shapekeys"
+    bl_label = "Apply Merged Object Sculpt (Shape Keys)"
+    bl_description = "Transfer vertex positions from merged object to original objects and apply resulted positions deltas to all shape keys."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        try:
+            transfer_position_data(context, apply_deltas_to_shapekeys=True)
+            
+        except ValueError as e:
+            self.report({'ERROR'}, str(e))
+            
+        return {'FINISHED'}

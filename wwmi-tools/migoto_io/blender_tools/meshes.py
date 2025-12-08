@@ -44,7 +44,7 @@ def create_merged_object(context):
             merged_obj.active_shape_key_index = index
 
 
-def transfer_position_data(context):
+def transfer_position_data(context, apply_deltas_to_shapekeys = False):
 
     # Try to use active object from sculpt mode
     merged_obj = bpy.context.active_object
@@ -90,6 +90,22 @@ def transfer_position_data(context):
             else:
                 # Target object has shapekeys, write data to Basis shapekey
                 key_block = obj.data.shape_keys.key_blocks['Basis']
+                # Apply sculpt to shapekeys
+                if apply_deltas_to_shapekeys:
+                    # Get vertex positions from Basis shapekey of original object
+                    original_position_data = numpy.empty(len(key_block.data), dtype=(numpy.float32, 3))
+                    key_block.data.foreach_get('co', original_position_data.ravel())
+                    # Calculate vertex position deltas
+                    position_data_diff = original_position_data - position_data[offset:(offset+vertex_count)]
+                    # Apply position deltas to shapekeys
+                    shapekey_position_data = numpy.empty(len(key_block.data), dtype=(numpy.float32, 3))
+                    for key in obj.data.shape_keys.key_blocks:
+                        if key.name == 'Basis':
+                            continue
+                        key.data.foreach_get('co', shapekey_position_data.ravel())
+                        shapekey_position_data -= position_data_diff
+                        key.data.foreach_set("co", shapekey_position_data.ravel())
+                # Apply sculpt to Basis shapekey
                 key_block.data.foreach_set("co", position_data[offset:(offset+vertex_count)].ravel())
             # Apply updated data to mesh
             obj.data.update()
