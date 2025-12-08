@@ -74,6 +74,13 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
         cfg = context.scene.wwmi_tools_settings
         layout = self.layout
 
+        if bpy.app.version[:2] == (4, 2):
+            layout.alert = True
+            layout.label(text="Blender 4.2 is not supported!", icon="ERROR")
+            layout.label(text="This Blender version cannot handle custom split normals properly due to regression.")
+            layout.alert = False
+            return
+
         layout.row().prop(cfg, 'tool_mode')
 
         if cfg.tool_mode == 'TOOLS_MODE':
@@ -99,6 +106,7 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
         layout.row().operator(WWMI_RemoveAllVertexGroups.bl_idname)
         layout.row().operator(WWMI_CreateMergedObject.bl_idname)
         layout.row().operator(WWMI_ApplyMergedObjectSculpt.bl_idname)
+        layout.row().operator(WWMI_ApplyMergedObjectSculptWithShapekeys.bl_idname)
 
     def draw_menu_export_mod(self, context):
         cfg = context.scene.wwmi_tools_settings
