@@ -21,6 +21,7 @@ class DataModel:
     flip_tangent: bool = False
     flip_bitangent_sign: bool = False
     flip_texcoord_v: bool = False
+    legacy_vertex_colors: bool = False
 
     data_extractor = BlenderDataExtractor()
     buffers_format: Dict[str, BufferLayout] = {}
@@ -99,7 +100,7 @@ class DataModel:
 
         data_importer = BlenderDataImporter()
 
-        data_importer.set_data(obj, mesh, index_buffer, vertex_buffer, semantic_converters, format_converters)
+        data_importer.set_data(obj, mesh, index_buffer, vertex_buffer, semantic_converters, format_converters, self.legacy_vertex_colors)
 
     def get_data(self, 
                  context: bpy.types.Context, 

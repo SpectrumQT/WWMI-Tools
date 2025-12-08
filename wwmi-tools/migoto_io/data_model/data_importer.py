@@ -15,7 +15,8 @@ class BlenderDataImporter:
                  index_buffer: NumpyBuffer,
                  vertex_buffer: NumpyBuffer,
                  semantic_converters: Dict[AbstractSemantic, List[callable]], 
-                 format_converters: Dict[AbstractSemantic, List[callable]]):
+                 format_converters: Dict[AbstractSemantic, List[callable]],
+                 legacy_vertex_colors: bool = False):
         
         buffer_semantic = index_buffer.layout.get_element(AbstractSemantic(Semantic.Index))
         index_data = self.get_semantic_data(index_buffer, buffer_semantic, format_converters, semantic_converters)
@@ -45,7 +46,7 @@ class BlenderDataImporter:
             if semantic == Semantic.ShapeKey:
                 shapekeys[buffer_semantic.abstract.index] = data
             elif semantic == Semantic.Color:
-                self.import_colors(mesh, buffer_semantic.get_name(), data, vertex_ids)
+                self.import_colors(mesh, buffer_semantic.get_name(), data, vertex_ids, legacy_vertex_colors)
             elif semantic == Semantic.TexCoord:
                 texcoords[buffer_semantic.abstract.index] = data
             elif semantic == Semantic.Normal:
@@ -142,11 +143,16 @@ class BlenderDataImporter:
                       mesh: bpy.types.Mesh, 
                       color_name: str, 
                       color_data: numpy.ndarray, 
-                      vertex_ids: numpy.ndarray):
+                      vertex_ids: numpy.ndarray,
+                      legacy_vertex_colors: bool = False):
         
-        mesh.vertex_colors.new(name=color_name)
-        color_layer = mesh.vertex_colors[color_name].data
-        color_layer.foreach_set('color', color_data[vertex_ids].flatten())
+        if legacy_vertex_colors:
+            mesh.vertex_colors.new(name=color_name)
+            color_layer = mesh.vertex_colors[color_name].data
+            color_layer.foreach_set('color', color_data[vertex_ids].flatten())
+        else:
+            color_attribute = mesh.color_attributes.new(name=color_name, type='FLOAT_COLOR', domain='CORNER')
+            color_attribute.data.foreach_set('color', color_data[vertex_ids].flatten())
 
     def import_normals(self, 
                        mesh: bpy.types.Mesh, 
