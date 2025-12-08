@@ -1,4 +1,4 @@
-; WWMI BETA-2 INI
+; WWMI BETA-3 INI
 
 {%- macro note(text) %}{% if comment_code %}; {{ text }}{% else %};DEL{% endif %}{% endmacro %}
 
@@ -325,30 +325,36 @@ vb3 = ResourceColorBuffer
 {% if merged_object.blend_remap_count == 0 -%}
 vb4 = ResourceBlendBuffer
 {{note("Pass merged skeleton is resource matches marked Bones Data CB")}}
-if vs-cb3 == 3381.7777
-    vs-cb3 = ResourceExtraMergedSkeleton
-endif
 if vs-cb4 == 3381.7777
-    vs-cb4 = ResourceMergedSkeleton
+    vs-cb4 = ref ResourceMergedSkeleton
+    if vs-cb3 == 3381.7777
+        vs-cb3 = ref ResourceExtraMergedSkeleton
+    endif
+elif vs-cb3 == 3381.7777
+    vs-cb3 = ref ResourceMergedSkeleton
 endif
 {%- else -%}
 if ResourceBlendBufferOverride === null
     {{note("Use non-remapped Blend.buf and merged skeleton")}}
     vb4 = ResourceBlendBuffer
-    if vs-cb3 == 3381.7777
-        vs-cb3 = ref ResourceExtraMergedSkeleton
-    endif
     if vs-cb4 == 3381.7777
         vs-cb4 = ref ResourceMergedSkeleton
+		if vs-cb3 == 3381.7777
+			vs-cb3 = ref ResourceExtraMergedSkeleton
+		endif
+	elif vs-cb3 == 3381.7777
+		vs-cb3 = ref ResourceMergedSkeleton
     endif
 else
     {{note("Use blend remap proxy buffers")}}
     vb4 = ref ResourceBlendBufferOverride
-    if vs-cb3 == 3381.7777
-        vs-cb3 = ref ResourceExtraMergedSkeletonOverride
-    endif
     if vs-cb4 == 3381.7777
         vs-cb4 = ref ResourceMergedSkeletonOverride
+		if vs-cb3 == 3381.7777
+			vs-cb3 = ref ResourceExtraMergedSkeletonOverride
+		endif
+	elif vs-cb3 == 3381.7777
+		vs-cb3 = ref ResourceMergedSkeletonOverride
     endif
 endif
 {%- endif %}
