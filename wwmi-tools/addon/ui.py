@@ -125,26 +125,11 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
         
         layout.row().prop(cfg, 'mod_skeleton_type')
 
-        layout.row()
-        
-        layout.row().prop(cfg, 'partial_export')
-
         if not cfg.partial_export:
+
             layout.row()
 
             layout.row().prop(cfg, 'mirror_mesh')
-            
-            if bpy.app.version >= (3, 5):
-                row = layout.row()
-                row.prop(cfg, 'ignore_nested_collections')
-                if not cfg.ignore_nested_collections:
-                    row.prop(cfg, 'ignore_hidden_collections')
-                
-            layout.row().prop(cfg, 'ignore_hidden_objects')
-            layout.row().prop(cfg, 'ignore_muted_shape_keys')
-
-            layout.row()
-            
             layout.row().prop(cfg, 'apply_all_modifiers')
             layout.row().prop(cfg, 'copy_textures')
 
@@ -154,10 +139,19 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
             grid.prop(cfg, 'write_ini')
             if cfg.write_ini:
                 grid.prop(cfg, 'comment_ini')
+                    
+            layout.row()
+            layout.row()
 
-                if cfg.mod_skeleton_type == 'MERGED':
-                    layout.row().prop(cfg, 'skeleton_scale')
-                layout.row().prop(cfg, 'unrestricted_custom_shape_keys')
+            if bpy.app.version >= (3, 5):
+                row = layout.row()
+                row.prop(cfg, 'ignore_nested_collections')
+                if not cfg.ignore_nested_collections:
+                    row.prop(cfg, 'ignore_hidden_collections')
+                
+            layout.row().prop(cfg, 'ignore_hidden_objects')
+            layout.row().prop(cfg, 'ignore_muted_shape_keys')
+
 
     def draw_menu_import_object(self, context):
         cfg = context.scene.wwmi_tools_settings
@@ -168,8 +162,10 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
         row = add_row_with_error_handler(layout, cfg, 'object_source_folder')
         row.prop(cfg, 'object_source_folder')
 
-        layout.row().prop(cfg, 'import_skeleton_type')
         layout.row().prop(cfg, 'color_storage')
+        layout.row().prop(cfg, 'import_skeleton_type')
+        if cfg.import_skeleton_type == 'MERGED':
+            layout.row().prop(cfg, 'skip_empty_vertex_groups')
         layout.row().prop(cfg, 'mirror_mesh')
 
         layout.row()
@@ -213,7 +209,7 @@ class WWMI_TOOLS_PT_SidePanelPartialExport(bpy.types.Panel):
     bl_category = "WWMI Tools"
     bl_options = {'HIDE_HEADER'}
     bl_idname = 'wwmi_1'
-    bl_order = 1
+    bl_order = 12
 
     @classmethod
     def poll(cls, context):
@@ -231,6 +227,33 @@ class WWMI_TOOLS_PT_SidePanelPartialExport(bpy.types.Panel):
         box.row().prop(cfg, 'export_colors')
         box.row().prop(cfg, 'export_texcoords')
         box.row().prop(cfg, 'export_shapekeys')
+
+
+class WWMI_TOOLS_PT_SidePanelAdvancedExport(bpy.types.Panel):
+    bl_label = "Advanced"
+    bl_parent_id = "WWMI_TOOLS_PT_SIDEBAR"
+    # bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "WWMI Tools"
+    bl_order = 10
+
+    @classmethod
+    def poll(cls, context):
+        cfg = context.scene.wwmi_tools_settings
+        return cfg.tool_mode == 'EXPORT_MOD'
+
+    def draw(self, context):
+        layout = self.layout
+        cfg = context.scene.wwmi_tools_settings
+
+        if not cfg.partial_export:
+            layout.row().prop(cfg, 'add_missing_vertex_groups')
+            layout.row().prop(cfg, 'unrestricted_custom_shape_keys')
+            if cfg.mod_skeleton_type == 'MERGED':
+                layout.row().prop(cfg, 'skeleton_scale')
+
+        layout.row().prop(cfg, 'partial_export')
 
 
 class WWMI_TOOLS_PT_SidePanelModInfo(bpy.types.Panel):

@@ -1,5 +1,7 @@
 import bpy
-import itertools
+import re
+
+from textwrap import dedent
 
 from ..blender_interface.objects import *
 
@@ -30,27 +32,51 @@ def remove_unused_vertex_groups(context, obj):
                 obj.vertex_groups.remove(obj.vertex_groups[i])
 
 
-def fill_gaps_in_vertex_groups(context, obj):
-    # Author: SilentNightSound#7430
+vg_id_pattern = re.compile(r"^\s*(\d+).*")
 
-    # Can change this to another number in order to generate missing groups up to that number
-    # e.g. setting this to 130 will create 0,1,2...130 even if the active selected object only has 90
-    # Otherwise, it will use the largest found group number and generate everything up to that number
-    largest = 0
+def fill_gaps_in_vertex_groups(context, obj, internal_call = False):
+    """
+    Fills empty spots in list of VGs with conventional names (ones that start with numeric IDs)
+    Example: [0, 3, 4, 6] transforms to [0, 1, 2, 3, 4, 5, 6]
+    """
 
     with OpenObject(context, obj) as obj:
 
-        for vg in obj.vertex_groups:
-            try:
-                if int(vg.name.split(".")[0])>largest:
-                    largest = int(vg.name.split(".")[0])
-            except ValueError:
-                print(f"Vertex group {vg.name} not named as integer, skipping")
+        vg_ids = [vg_id_pattern.findall(vg.name) for vg in obj.vertex_groups]
+        vg_ids = [int(vg_id[0]) if vg_id else -1 for vg_id in vg_ids]
+        
+        if len(vg_ids) == 0:
+            return
 
-        missing = set([f"{i}" for i in range(largest+1)]) - set([x.name.split(".")[0] for x in obj.vertex_groups])
+        vg_count = max(vg_ids) + 1
 
-        for number in missing:
-            obj.vertex_groups.new(name=f"{number}")
+        if vg_count == 0:
+            return
+        
+        # Limit the list of existing IDs to filling range
+        vg_ids = vg_ids[:min(len(vg_ids), vg_count)]
+
+        # Ensure abscence of VGs without numeric IDs sharing indices with missing IDs we're about to add
+        if -1 in vg_ids:
+            if internal_call:
+                raise ValueError(dedent(f"""
+                    Vertex Group names of object `{obj.name.removeprefix('TEMP_')}` are ambigous!
+                    VG `{obj.vertex_groups[vg_ids.index(-1)].name}` is located among VGs with numeric IDs!
+                    Make sure that either all or none VG names start with numeric IDs.
+                    Alternatively, disable `Add Missing Vertex Groups` in `Advanced` tab.
+                """))
+            else:
+                raise ValueError(dedent(f"""
+                    Vertex Group names of object `{obj.name}` are ambigous!
+                    VG `{obj.vertex_groups[vg_ids.index(-1)].name}` is located among VGs with numeric IDs!
+                    Make sure that either all or none VG names start with numeric IDs.
+                """))
+
+        expected_vg_ids = set([str(vg_id) for vg_id in range(vg_count)])
+        missing_vg_ids = expected_vg_ids - set(map(str, vg_ids))
+    
+        for vg_id in missing_vg_ids:
+            obj.vertex_groups.new(name=vg_id)
 
         bpy.ops.object.vertex_group_sort()
 

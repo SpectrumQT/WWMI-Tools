@@ -15,6 +15,7 @@ from ..migoto_io.blender_interface.collections import *
 from ..migoto_io.blender_interface.objects import *
 from ..migoto_io.data_model.data_model import DataModel
 from ..migoto_io.data_model.byte_buffer import NumpyBuffer, MigotoFmt
+from ..migoto_io.blender_tools.vertex_groups import remove_unused_vertex_groups
 
 from ..extract_frame_data.metadata_format import read_metadata
 
@@ -60,6 +61,8 @@ class ObjectImporter:
         col = new_collection(object_source_folder.stem)
         for obj in imported_objects:
             link_object_to_collection(obj, col)
+            if cfg.skip_empty_vertex_groups and cfg.import_skeleton_type == 'MERGED':
+                remove_unused_vertex_groups(context, obj)
 
         print(f'Total import time: {time.time() - start_time :.3f}s')
 

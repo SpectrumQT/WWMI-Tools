@@ -129,6 +129,7 @@ class ModExporter:
             skeleton_type=SkeletonType.Merged if self.cfg.mod_skeleton_type == 'MERGED' else SkeletonType.PerComponent,
             mesh_scale=0.01,
             mesh_rotation=(0, 0, 180),
+            add_missing_vertex_groups=self.cfg.add_missing_vertex_groups,
         )
         self.merged_object = object_merger.merged_object
         print(f'Merged object build time: {time.time() - start_time :.3f}s ({self.merged_object.vertex_count} vertices, {self.merged_object.index_count} indices)')

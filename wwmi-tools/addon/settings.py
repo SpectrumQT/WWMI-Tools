@@ -126,9 +126,15 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         default=0,
     ) # type: ignore
 
+    skip_empty_vertex_groups: BoolProperty(
+        name="Skip Empty Vertex Groups",
+        description="Automatically remove zero-weight Vertex Groups from imported components. This way VG list of each component will contain only actually used VGs",
+        default=True,
+    ) # type: ignore
+
     mirror_mesh: BoolProperty(
         name="Mirror Mesh",
-        description="Automatically mirror mesh to match actual in-game left-right. Transformation applies to the data itself and does not affect Scale X of Transform section in Object Properties.",
+        description="Automatically mirror mesh to match actual in-game left-right. Transformation applies to the data itself and does not affect Scale X of Transform section in Object Properties",
         default=False,
     ) # type: ignore
 
@@ -315,6 +321,12 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         name="Unrestricted Custom Shape Keys",
         description="Allows to use Custom Shape Keys for components that don't have them by default. Generates extra mod.ini logic",
         default=False,
+    ) # type: ignore
+    
+    add_missing_vertex_groups: BoolProperty(
+        name="Add Missing Vertex Groups",
+        description="Fill gaps in Vertex Groups list based on VG names (i.e. add group '1' between '0' and '2' if it's missing)",
+        default=True,
     ) # type: ignore
 
     remove_temp_object: BoolProperty(
