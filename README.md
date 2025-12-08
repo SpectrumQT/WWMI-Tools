@@ -34,12 +34,12 @@ Already dumped and exported models are located in [WWMI Assets](https://github.c
 
 ## Installation
 
-1. Install [latest Blender version](https://www.blender.org/download/) (**tested with up to v4.4**)
+1. Install [the latest Blender version](https://www.blender.org/download/) (**tested with up to v5.0**)
 2. Download the [latest release](https://github.com/SpectrumQT/WWMI-Tools/releases/latest) of **WWMI-Tools-X.X.X.zip**
 3. Open Blender, go to **[Edit] -> [Preferences] -> [Add-ons]**
 4. Open addon `.zip` selection dialogue via top-right corner button:
     * For **Blender 3.6 LTS**: Press **[Install]** button
-    * For **Blender 4.2 LTS**: Press **[V]** button and select **Install from Disk...**
+    * For **Blender 4.X**: Press **[V]** button and select **Install from Disk...**
 5. Locate downloaded **WWMI-Tools-X.X.X.zip** and select it
 6. Press **[Install Addon]** button
 7. Start typing  **WWMI** to filter in top-right corner
