@@ -169,6 +169,7 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
         row.prop(cfg, 'object_source_folder')
 
         layout.row().prop(cfg, 'import_skeleton_type')
+        layout.row().prop(cfg, 'color_storage')
         layout.row().prop(cfg, 'mirror_mesh')
 
         layout.row()

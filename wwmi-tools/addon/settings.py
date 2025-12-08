@@ -132,6 +132,16 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         default=False,
     ) # type: ignore
 
+    color_storage: bpy.props.EnumProperty(
+        name="Vertex Colors",
+        description="Controls how color data is handled",
+        items=[
+            ('LINEAR', 'Linear', 'Display vertex colors as they actually are and store them with full float precision. Handle colors via `color_attributes`'),
+            ('LEGACY', 'sRGB (legacy)', 'Display vertex colors as sRGB shifted and store them with 8-bit float precision. Handle colors via deprecated `vertex_colors`'),
+        ],
+        default='LINEAR',
+    ) # type: ignore
+
     ########################################
     # Mod Export
     ########################################

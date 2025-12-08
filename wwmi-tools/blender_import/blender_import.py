@@ -101,6 +101,7 @@ class ObjectImporter:
             model = DataModel()
             model.flip_winding = True
             model.flip_texcoord_v = True
+            model.legacy_vertex_colors = cfg.color_storage == 'LEGACY'
 
             model.set_data(obj, mesh, index_buffer, vertex_buffer, vg_remap, mirror_mesh=cfg.mirror_mesh, mesh_scale=0.01, mesh_rotation=(0, 0, 180))
 
