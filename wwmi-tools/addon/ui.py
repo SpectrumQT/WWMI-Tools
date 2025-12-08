@@ -107,6 +107,8 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
         layout.row().operator(WWMI_CreateMergedObject.bl_idname)
         layout.row().operator(WWMI_ApplyMergedObjectSculpt.bl_idname)
         layout.row().operator(WWMI_ApplyMergedObjectSculptWithShapekeys.bl_idname)
+        layout.row().operator(WWMI_ConvertVertexColors.bl_idname)
+        
 
     def draw_menu_export_mod(self, context):
         cfg = context.scene.wwmi_tools_settings

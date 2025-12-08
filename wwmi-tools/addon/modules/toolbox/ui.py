@@ -206,3 +206,20 @@ class WWMI_ApplyMergedObjectSculptWithShapekeys(bpy.types.Operator):
             self.report({'ERROR'}, str(e))
             
         return {'FINISHED'}
+    
+
+class WWMI_ConvertVertexColors(bpy.types.Operator):
+    bl_idname = "wwmi_tools.convert_vertex_colors"
+    bl_label = "Convert Vertex Colors To Linear"
+    bl_description = "Move COLOR and COLOR1 color layers of selected objects to the new Linear storage."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        try:
+            convert_vertex_colors_storage_format(context)
+            
+        except ValueError as e:
+            self.report({'ERROR'}, str(e))
+            
+        return {'FINISHED'}
+    

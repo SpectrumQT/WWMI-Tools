@@ -110,3 +110,39 @@ def transfer_position_data(context, apply_deltas_to_shapekeys = False):
             # Apply updated data to mesh
             obj.data.update()
         offset += vertex_count
+
+
+def convert_vertex_colors_storage_format(context):
+
+    for selected_obj in context.selected_objects:
+
+        with OpenObject(context, selected_obj, 'OBJECT') as obj:
+
+            mesh = obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh()
+
+            if not hasattr(mesh, 'vertex_colors'):
+                continue
+
+            for semantic_name in ['COLOR', 'COLOR1']:
+
+                if semantic_name not in mesh.vertex_colors:
+                    if semantic_name in mesh.color_attributes:
+                        print(f"[{obj.name}]: Color layer `{semantic_name}` is already stored as Linear")
+                    else:
+                        print(f"[{obj.name}]: Color layer `{semantic_name}` not found in the object")
+                    continue
+
+                # Allocate intermediate data array
+                data = numpy.empty(len(mesh.loops), dtype=(numpy.float32, 4))
+                # Fetch data from deprecated color layer
+                vertex_color = mesh.vertex_colors[semantic_name]
+                vertex_color.data.foreach_get('color', data.ravel())
+                # Remove deprecated color layer
+                obj.data.vertex_colors.remove(vertex_color)
+                # Write data to the new color layer
+                color_attribute = obj.data.color_attributes.new(name=semantic_name, type='FLOAT_COLOR', domain='CORNER')
+                color_attribute.data.foreach_set('color', data.flatten())
+
+                print(f"[{obj.name}]: Converted legacy color layer `{semantic_name}` to Linear")
+
+            obj.data.update()
