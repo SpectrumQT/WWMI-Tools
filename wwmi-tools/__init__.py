@@ -9,9 +9,9 @@ sys.path.insert(0, str(Path(__file__).parent / 'libs'))
 
 bl_info = {
     "name": "WWMI Tools",
-    "version": (1, 3, 5),
-    "wwmi_version": (0, 9, 1),
-    "blender": (2, 93, 0),
+    "version": (1, 4, 0),
+    "wwmi_version": (0, 9, 6),
+    "blender": (3, 6, 0),
     "author": "SpectrumQT, LeoTorreZ, SinsOfSeven, SilentNightSound, DarkStarSword",
     "location": "View3D > Sidebar > Tool Tab",
     "description": "Wuthering Waves modding toolkit",
@@ -37,6 +37,7 @@ def register():
     
     # prefs = bpy.context.preferences.addons[__package__].preferences
     bpy.app.timers.register(trigger_mod_export, first_interval=0.1)
+
 
 def unregister():
     auto_load.unregister()
