@@ -159,9 +159,9 @@ configuration = Configuration(
             ],
             BufferLayout([
                 BufferSemantic(AbstractSemantic(Semantic.TexCoord, 0), DXGIFormat.R16G16_FLOAT),
-                BufferSemantic(AbstractSemantic(Semantic.Color, 1), DXGIFormat.R16G16_UNORM),
                 BufferSemantic(AbstractSemantic(Semantic.TexCoord, 1), DXGIFormat.R16G16_FLOAT),
                 BufferSemantic(AbstractSemantic(Semantic.TexCoord, 2), DXGIFormat.R16G16_FLOAT),
+                BufferSemantic(AbstractSemantic(Semantic.TexCoord, 3), DXGIFormat.R16G16_FLOAT),
             ])),
         'TEXCOORD_BUFFER_STATIC': DataMap([
                 Source('DRAW_VS', ShaderType.Empty, SlotType.VertexBuffer, SlotId(2), file_ext='buf'),
@@ -210,9 +210,9 @@ configuration = Configuration(
         BufferSemantic(AbstractSemantic(Semantic.Blendweight, 0), DXGIFormat.R8G8B8A8_UNORM),
         BufferSemantic(AbstractSemantic(Semantic.Color, 0), DXGIFormat.R8G8B8A8_UNORM),
         BufferSemantic(AbstractSemantic(Semantic.TexCoord, 0), DXGIFormat.R16G16_FLOAT),
-        BufferSemantic(AbstractSemantic(Semantic.Color, 1), DXGIFormat.R16G16_UNORM),
         BufferSemantic(AbstractSemantic(Semantic.TexCoord, 1), DXGIFormat.R16G16_FLOAT),
         BufferSemantic(AbstractSemantic(Semantic.TexCoord, 2), DXGIFormat.R16G16_FLOAT),
+        BufferSemantic(AbstractSemantic(Semantic.TexCoord, 3), DXGIFormat.R16G16_FLOAT),
     ]),
 )
 
