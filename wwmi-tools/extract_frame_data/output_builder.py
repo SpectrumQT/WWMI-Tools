@@ -153,9 +153,9 @@ class OutputBuilder:
                 ]),
                 'TexCoord': ExtractedObjectBuffer([
                     ExtractedObjectBufferSemantic(Semantic.TexCoord, 0, DXGIFormat.R16G16_FLOAT),
-                    ExtractedObjectBufferSemantic(Semantic.Color, 1, DXGIFormat.R16G16_UNORM),
                     ExtractedObjectBufferSemantic(Semantic.TexCoord, 1, DXGIFormat.R16G16_FLOAT),
                     ExtractedObjectBufferSemantic(Semantic.TexCoord, 2, DXGIFormat.R16G16_FLOAT),
+                    ExtractedObjectBufferSemantic(Semantic.TexCoord, 3, DXGIFormat.R16G16_FLOAT),
                 ])
             })
         else:
