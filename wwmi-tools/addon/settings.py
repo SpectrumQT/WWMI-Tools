@@ -91,6 +91,12 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         default=False,
     ) # type: ignore
 
+    skip_known_cubemap_textures: BoolProperty(
+        name="Textures Filtering: Skip Known Cubemaps",
+        description="Skip texture if its hash is in the list of known cubemaps. Those textures are often loaded incorrectly.",
+        default=True,
+    ) # type: ignore
+
     extract_output_folder: StringProperty(
         name="Output Folder",
         description="Extracted WWMI objects export directory",

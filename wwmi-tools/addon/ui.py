@@ -195,6 +195,7 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
             grid.prop(cfg, 'skip_small_textures_size')
 
         layout.row().prop(cfg, 'skip_jpg_textures')
+        layout.row().prop(cfg, 'skip_known_cubemap_textures')
         layout.row().prop(cfg, 'skip_same_slot_hash_textures')
 
         layout.row()
@@ -250,6 +251,7 @@ class WWMI_TOOLS_PT_SidePanelAdvancedExport(bpy.types.Panel):
         cfg = context.scene.wwmi_tools_settings
 
         if not cfg.partial_export:
+            layout.row().prop(cfg, 'skip_known_cubemap_textures')
             layout.row().prop(cfg, 'add_missing_vertex_groups')
             layout.row().prop(cfg, 'unrestricted_custom_shape_keys')
             if cfg.mod_skeleton_type == 'MERGED':

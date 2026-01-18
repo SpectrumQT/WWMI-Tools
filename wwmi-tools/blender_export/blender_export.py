@@ -88,7 +88,7 @@ class ModExporter:
             set_user_context(self.context, user_context)
 
         if not self.cfg.partial_export:
-            self.textures = get_textures(self.object_source_folder)
+            self.textures = get_textures(self.object_source_folder, ['af26db30', '1320a071', '10d7937d', '87505b2b'] if self.cfg.skip_known_cubemap_textures else [])
 
             if self.cfg.write_ini:
                 try:

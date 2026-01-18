@@ -18,6 +18,7 @@ class TextureFilter:
     min_file_size: int
     exclude_extensions: List[str]
     exclude_same_slot_hash_textures: bool
+    exclude_hashes: List[str]
 
 
 @dataclass
@@ -96,7 +97,12 @@ class OutputBuilder:
                 if len(self.texture_filter.exclude_extensions) > 0:
                     if texture.ext in self.texture_filter.exclude_extensions:
                         continue
-                    
+
+                # Exclude textures with specified hashes
+                if self.texture_filter.exclude_hashes:
+                    if texture.hash in self.texture_filter.exclude_hashes:
+                        continue
+
                 # Exclude texture below minimal file size 
                 if self.texture_filter.min_file_size != 0:
                     file_size = Path(texture.path).stat().st_size

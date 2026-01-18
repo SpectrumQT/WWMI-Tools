@@ -3,6 +3,7 @@ import re
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import List
 
 
 @dataclass
@@ -12,7 +13,7 @@ class Texture:
     filename: str
 
 
-def get_textures(object_source_folder: Path):
+def get_textures(object_source_folder: Path, exclude_hashes: List[str]):
     textures = {}
     for texture_filename in os.listdir(object_source_folder):
         if texture_filename.endswith(".dds") or texture_filename.endswith(".jpg"): 
@@ -28,6 +29,9 @@ def get_textures(object_source_folder: Path):
                     continue
 
             texture_hash = result[0]
+
+            if exclude_hashes and texture_hash in exclude_hashes:
+                continue
 
             textures[texture_hash] = Texture(
                 hash=texture_hash,
