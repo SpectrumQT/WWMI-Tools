@@ -215,6 +215,11 @@ class DataModelWWMI(DataModel):
 
         index_offset = 0
         for index_count in index_layout:
+            # Skip remapping the component if its custom mesh is empty
+            if index_count == 0:
+                remapped_vgs_counts.append(0)
+                continue
+    
             # Extract a segment of Index Buffer for the component (index_count number of indices starting from index_offset)
             vertex_ids = index_data[index_offset:index_offset+index_count]
             # Remove duplicate vertex ids (since multiple indices may reference the same vertex)
@@ -274,4 +279,3 @@ class DataModelWWMI(DataModel):
         print(f'Blend remap time: {time.time() - start_time :.3f}s ({int(len(blend_remap_forward) / 512)} remaps)')
 
         return buffers
-    

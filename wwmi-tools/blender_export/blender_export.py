@@ -150,8 +150,7 @@ class ModExporter:
         if len(self.merged_object.object.vertex_groups) > 256:
             index_layout = []
             for component in self.merged_object.components:
-                if component.index_count > 0:
-                    index_layout.append(component.index_count)
+                index_layout.append(component.index_count)
                 
         self.buffers, vertex_count = data_model.get_data(
             self.context, 
