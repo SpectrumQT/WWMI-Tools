@@ -1346,7 +1346,7 @@ def register():
     updater.verbose = True  # make False for production default
     updater.backup_current = True  # True by default
     updater.backup_ignore_patterns = ["__pycache__"]
-    updater.overwrite_patterns = ["*.png", "*.jpg", "README.md", "LICENSE.txt"]
+    updater.overwrite_patterns = ["*.png", "*.jpg", "README.md", "LICENSE.txt", "*.j2"]
     updater.remove_pre_update_patterns = ["*.py", "*.pyc"]
     updater.include_branches = True
     updater.use_releases = True
