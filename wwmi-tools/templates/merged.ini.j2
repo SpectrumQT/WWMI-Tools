@@ -1,4 +1,4 @@
-; WWMI BETA-3 INI
+; WWMI BETA-4 INI
 
 {%- macro note(text) %}{% if comment_code %}; {{ text }}{% else %};DEL{% endif %}{% endmacro %}
 
@@ -39,6 +39,15 @@ global $state_id = 0
 global $mod_enabled = 0
 {{note("Indicates if our object was detected in previous frame")}}
 global $object_detected = 0
+{{note("Used to pass current merge status to CommandListMergeSkeleton and get resulting merge status")}}
+global $merge_status_id = 0
+{{note("Stores skeleton merging status of this component for current frame:")}}
+{{note("0 - neither regular nor special skeleton bones data was collected for this component")}}
+{{note("1 - only regular skeleton bones data was collected for this component")}}
+{{note("2 - both regular and special skeleton bones data was collected for this component")}}
+{%- for component in extracted_object.components %}
+global $merge_status_id_{{ loop.index0 }} = 0
+{%- endfor %}
 {%- if cfg.use_ini_toggles %}
 ; Swap vars aka toggles defaults
 {%- for var in cfg.ini_toggles.vars %}
@@ -106,12 +115,10 @@ endif
 
 {{note("Copes hard to make merged skeleton work with WuWa 1.1+ pipeline")}}
 [CommandListUpdateMergedSkeleton]
-{{note("Changes between 0 and 1 with every frame, used to run bone merging only once per frame for every component")}}
-if $state_id
-    $state_id = 0
-else
-    $state_id = 1
-endif
+{{note("Reset skeleton merge status for all components")}}
+{%- for component in extracted_object.components %}
+$merge_status_id_{{ loop.index0 }} = 0
+{%- endfor %}
 {{note("Copy skeleton merged in previous frame to new buffer so we could force it to vs-cb4 slot")}}
 ResourceMergedSkeleton = copy ResourceMergedSkeletonRW
 {{note("Copy extra skeleton merged in previous frame to new buffer so we could force it to vs-cb3 slot")}}
@@ -273,22 +280,53 @@ hash = {{ extracted_object.cb4_hash }}
 match_priority = 0
 filter_index = 3381.7777
 
-{{note("Update ResourceMergedSkeletonRW with bones data of current component")}}
+{{note("Updates merged skeleton buffers with skeleton data of calling component")}}
+{{note("The main problem is we can't reliably identify type of skeleton just from the buffer alone since both have the same hash")}}
+{{note("Luckily, any relevant shader call within the stack has one of the following slot usage patterns:")}}
+{{note("1. Only regular skeleton in vs-cb3")}}
+{{note("2. Only regular skeleton in vs-cb4")}}
+{{note("3. Special skeleton in vs-cb3 and regular skeleton in vs-cb4")}}
+{{note("So by the time we've finished processing the stack we can reliably grab:")}}
+{{note("* Regular skeleton from vs-cb4 (pattern 2 or 3), since special skeleton never goes there")}}
+{{note("* Special skeleton from vs-cb3 (pattern 3), since we know for sure that regular currently is in vs-cb4")}}
 [CommandListMergeSkeleton]
-{{note("Set custom scale for skeleton, changing size of the entire model")}}
-$\WWMIv1\custom_mesh_scale = {{ '%0.2f'| format(skeleton_scale) }}
-{{note("Pass constant buffer with real bone data to copy bones from")}}
-cs-cb8 = ref vs-cb4
-{{note("Pass buffer that gonna store real bone data of all components")}}
-cs-u6 = ResourceMergedSkeletonRW
-{{note("Run Skeleton Merger CS to merge real bone data of current component into ResourceMergedSkeletonRW")}}
-run = CustomShader\WWMIv1\SkeletonMerger
-{{note("Pass constant buffer with Anti-Aliasing bone data to copy bones from")}}
-cs-cb8 = ref vs-cb3
-{{note("Pass buffer that gonna store Anti-Aliasing bone data of all components")}}
-cs-u6 = ResourceExtraMergedSkeletonRW
-{{note("Run Skeleton Merger CS to merge Anti-Aliasing bone data of current component into ResourceExtraMergedSkeletonRW")}}
-run = CustomShader\WWMIv1\SkeletonMerger
+{{note("Here we're using $merge_status_id as both 'function' input aka argument and return result")}}
+{{note("We're doing so to prevent wasting compute resources on job that's already done for current frame")}}
+{{note("* $merge_status_id being 0 indicates we haven't merged any skeleton data for calling component in current frame yet")}}
+if $merge_status_id == 0
+    {{note("Try to get regular skeleton data from current shader call")}}
+    {{note("Make sure vs-cb4 contain skeleton data")}}
+	if vs-cb4 == 3381.7777
+        {{note("Pass constant buffer with regular skeleton data to copy bones from")}}
+		cs-cb8 = ref vs-cb4
+        {{note("Pass buffer that gonna store regular skeleton data of all components")}}
+		cs-u6 = ResourceMergedSkeletonRW
+        {{note("Set custom scale for skeleton, changing size of the entire model")}}
+		$\WWMIv1\custom_mesh_scale = {{ '%0.2f'| format(skeleton_scale) }}
+        {{note("Run Skeleton Merger CS to merge regular skeleton data of current component into ResourceMergedSkeletonRW")}}
+		run = CustomShader\WWMIv1\SkeletonMerger
+        {{note("Memorize that we've merged regular skeleton data of current frame")}}
+		$merge_status_id = 1
+	endif
+endif
+{{note("* $merge_status_id being 1 indicates we've already merged regular skeleton data for calling component in current frame")}}
+if $merge_status_id == 1
+    {{note("Try to get special skeleton data from current shader call")}}
+    {{note("Make sure both vs-cb4 and vs-cb3 contain skeleton data")}}
+    {{note("That's the only place where we can reliably get data for extra skeleton")}}
+	if vs-cb4 == 3381.7777 && vs-cb3 == 3381.7777
+        {{note("Pass constant buffer with special skeleton data to copy bones from")}}
+		cs-cb8 = ref vs-cb3
+        {{note("Pass buffer that gonna store special skeleton data of all components")}}
+		cs-u6 = ResourceExtraMergedSkeletonRW
+        {{note("Set custom scale for skeleton, changing size of the entire model")}}
+		$\WWMIv1\custom_mesh_scale = {{ '%0.2f'| format(skeleton_scale) }}
+        {{note("Run Skeleton Merger CS to merge special skeleton data of current component into ResourceExtraMergedSkeletonRW")}}
+		run = CustomShader\WWMIv1\SkeletonMerger
+        {{note("Memorize that we've merged both regular and special skeleton data of current frame")}}
+		$merge_status_id = 2
+	endif
+endif
 
 {{note("Overrides textures via triggering [ResourceTextureX] sections by calling chechtextureoverride on ps-t slots")}}
 [CommandListTriggerResourceOverrides]
@@ -386,17 +424,18 @@ match_index_count = {{ component.index_count }}
 {{note("Signal our mod that object is found on screen and we can start overriding it")}}
 $object_detected = 1
 if $mod_enabled
-    local $state_id_{{ loop.index0 }}
-    {{note("Limit bone merging to 1 time per frame")}}
-    if $state_id_{{ loop.index0 }} != $state_id
-        {{note("$state_id changes between 0 and 1 every frame")}}
-        $state_id_{{ loop.index0 }} = $state_id
-        {{note("Pass variables for SkeletonMerger CS")}}
+    {{note("Try to get skeleton data from each call of the stack until merge status is 2 (see Constants for details)")}}
+    if $merge_status_id_{{ loop.index0 }} != 2
+        {{note("Configure SkeletonMerger shader based on VG layout of current component")}}
         $\WWMIv1\vg_offset = {{ extracted_object.components[loop.index0].vg_offset }}
         $\WWMIv1\vg_count = {{ extracted_object.components[loop.index0].vg_count }}
-        {{note("Merge bones of this components into ResourceMergedSkeleton")}}
-        run = CommandListMergeSkeleton
-    endif
+        {{note("Pass current merge status to MergeSkeleton command list")}}
+		$merge_status_id = $merge_status_id_{{ loop.index0 }}
+        {{note("Execute MergeSkeleton command list, updated merge status will be written to $merge_status_id")}}
+		run = CommandListMergeSkeleton
+        {{note("Remember merge status locally")}}
+		$merge_status_id_{{ loop.index0 }} = $merge_status_id
+	endif
     {{note("Override draw call if we have merged skeleton ready")}}
     if ResourceMergedSkeleton !== null
     {%- if merged_object.components[loop.index0].objects | length > 0 %}
