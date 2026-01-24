@@ -1,4 +1,4 @@
-; WWMI BETA-4 INI
+; WWMI BETA-5 INI
 
 {%- macro note(text) %}{% if comment_code %}; {{ text }}{% else %};DEL{% endif %}{% endmacro %}
 
@@ -339,6 +339,7 @@ CheckTextureOverride = ps-t4
 CheckTextureOverride = ps-t5
 CheckTextureOverride = ps-t6
 CheckTextureOverride = ps-t7
+CheckTextureOverride = ps-t8
 {{note("Trigger callbacks on bone data CBs to assign them filter_index")}}
 {{note("These buffers cannot be replaced directly via `this` as their hash is widely used by many objects")}}
 CheckTextureOverride = vs-cb3
