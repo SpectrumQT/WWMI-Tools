@@ -168,8 +168,7 @@ class ObjectMerger:
                     bpy.ops.object.transform_apply(location = True, rotation = True, scale = True)
                     # Apply all modifiers
                     if self.apply_modifiers:
-                        selected_modifiers = [modifier.name for modifier in get_modifiers(obj)]
-                        apply_modifiers_for_object_with_shape_keys(self.context, selected_modifiers, None)
+                        bpy.ops.object.convert(target='MESH')
                     # Triangulate (this step is crucial since export supports only triangles)
                     triangulate_object(self.context, temp_obj)
                 # Handle Vertex Groups
