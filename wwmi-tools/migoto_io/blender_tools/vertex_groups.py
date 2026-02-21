@@ -42,7 +42,7 @@ def fill_gaps_in_vertex_groups(context, obj, internal_call = False):
 
     with OpenObject(context, obj) as obj:
 
-        vg_ids = [vg_id_pattern.findall(vg.name) for vg in obj.vertex_groups]
+        vg_ids = [vg_id_pattern.findall(vg.name) for vg in obj.vertex_groups if 'ignore' not in vg.name.lower()]
         vg_ids = [int(vg_id[0]) if vg_id else -1 for vg_id in vg_ids]
         
         if len(vg_ids) == 0:
