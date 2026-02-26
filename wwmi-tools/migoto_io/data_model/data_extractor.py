@@ -178,13 +178,20 @@ class BlenderDataExtractor:
                 data = self.fetch_data(mesh.loops, 'bitangent_sign', numpy_type, size)
             elif semantic == Semantic.Color:
                 if hasattr(mesh, 'vertex_colors') and semantic_name in mesh.vertex_colors:
-                    # Legacy projects support (for object imported with WWMI Tools 1.3.5 or below)
-                    color_attribute = mesh.vertex_colors[semantic_name]
+                    # Legacy projects support
+                    color_attribute = mesh.vertex_colors.get(semantic_name, None)
                 else:
-                    color_attribute = mesh.color_attributes[semantic_name]
-                data = self.fetch_data(color_attribute.data, 'color', numpy_type, size)
+                    color_attribute = mesh.color_attributes.get(semantic_name, None)
+                if color_attribute is not None:
+                    data = self.fetch_data(color_attribute.data, 'color', numpy_type, size)
+                else:
+                    data = numpy.zeros(size, dtype=numpy_type)
             elif semantic == Semantic.TexCoord:
-                data = self.fetch_data(mesh.uv_layers[semantic_name].data, 'uv', numpy_type, size)
+                uv_layer = mesh.uv_layers.get(semantic_name, None)
+                if uv_layer is not None:
+                    data = self.fetch_data(uv_layer.data, 'uv', numpy_type, size)
+                else:
+                    data = numpy.zeros(size, dtype=numpy_type)
             else:
                 continue
             self.sanitize_blender_data(data)
