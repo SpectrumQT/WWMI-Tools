@@ -11,6 +11,7 @@ from typing import Tuple, List, Dict, Optional
 from ...migoto_io.data_model.dxgi_format import DXGIFormat, DXGIType
 from ...migoto_io.data_model.byte_buffer import Semantic, AbstractSemantic, BufferSemantic, BufferLayout, NumpyBuffer
 from ...migoto_io.data_model.data_model import DataModel
+# from .color1_encoder import *
 
 
 class DataModelWWMI(DataModel):
@@ -90,11 +91,48 @@ class DataModelWWMI(DataModel):
                 BufferSemantic(AbstractSemantic(Semantic.Blendindices, 1), DXGIFormat.R16_UINT, stride=num_vgs*2),
             ])
 
+        # # RESEARCH: COLOR1 TBN data request (tangents, bitangent signs and normals) signs for encoding
+        # buffers_format['TBN'] = BufferLayout([
+        #     BufferSemantic(AbstractSemantic(Semantic.Tangent, 1), DXGIFormat.R32G32B32_FLOAT),
+        #     BufferSemantic(AbstractSemantic(Semantic.BitangentSign, 1), DXGIFormat.R16_FLOAT),
+        #     BufferSemantic(AbstractSemantic(Semantic.Normal, 1), DXGIFormat.R32G32B32_FLOAT),
+        # ])
+
         index_data, vertex_buffer = self.export_data(context, collection, mesh, excluded_buffers, buffers_format, mirror_mesh, build_blend_remaps)
 
         buffers = self.build_buffers(index_data, vertex_buffer, excluded_buffers, buffers_format)
 
         vertex_ids = vertex_buffer.get_field(AbstractSemantic(Semantic.VertexId).get_name())
+
+
+        # # RESEARCH: COLOR1 TBN data encoder test (write result to new vertex attribute)
+        # tangents = vertex_buffer.get_field(AbstractSemantic(Semantic.Tangent, 1))
+        # normals = vertex_buffer.get_field(AbstractSemantic(Semantic.Normal, 1))
+        # bitangent_signs = vertex_buffer.get_field(AbstractSemantic(Semantic.BitangentSign, 1))
+        # positions = vertex_buffer.get_field(AbstractSemantic(Semantic.Position, 0))
+        
+        # def test_tangents_encoder(tangents, bitangent_signs, normals):
+        #     # smooth_normals = get_smooth_loop_normals(mesh)
+        #     # smooth_normals = smooth_normals[vertex_ids]
+            
+        #     # smooth_normals = calc_smooth_normals(mesh)
+        #     # smooth_normals = numpy.array([list(x) for x in smooth_normals.values()])
+        #     # smooth_normals = smooth_normals[vertex_ids]
+            
+        #     smooth_normals = smooth_normals_angle_weighted(positions, index_data)
+        #     # smooth_normals = smooth_normals_angle_weighted_vectorized(positions, index_data)
+        #     tangent_normal = compute_tangent_normals(smooth_normals, tangents, bitangent_signs, normals)
+        #     data = self.converter_oct_encode_vector(tangent_normal)
+
+        #     # data = numpy.array([list(unit_vector_to_octahedron(Vector(x))) for x in tangent_normal.tolist()])
+
+        #     data = (data + 1.0) * 0.5
+
+        #     data = self.converter_resize_second_dim(data, 4)
+        #     self._create_verterx_attribute('TANGENT_NEW_TEST', 'Component 0.001', data, vertex_ids)
+
+        # test_tangents_encoder(tangents, bitangent_signs, normals)
+
 
         if build_blend_remaps:
             blend_buffer = buffers.get('Blend', None)
