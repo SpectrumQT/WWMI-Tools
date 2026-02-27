@@ -169,7 +169,7 @@ class DataModelWWMI(DataModel):
         if len(shapekey_vertex_ids) == 0:
             return {}
 
-        shapekey_offsets = numpy.array(shapekey_offsets)
+        shapekey_offsets = numpy.array(shapekey_offsets, dtype=numpy.uint32)
         
         shapekey_vertex_offsets_np = numpy.zeros(len(shapekey_vertex_offsets), dtype=(numpy.float16, 6))
         # shapekey_vertex_offsets = numpy.zeros(len(shapekey_vertex_offsets), dtype=numpy.float16)
