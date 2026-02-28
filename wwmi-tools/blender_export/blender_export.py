@@ -139,9 +139,9 @@ class ModExporter:
             data[:, 1] = 0.25
             data[:, 3] = 1.0
             create_color_attribute(mesh, 'COLOR', data, replace_existing=False)
-        create_uv_layer(mesh, 'TEXCOORD0.xy', replace_existing=False)
-        copy_uv_layer(mesh, 'TEXCOORD.xy', 'TEXCOORD01.xy', replace_existing=False)
-        create_uv_layer_from_frontal_projection(mesh, 'TEXCOORD02.xy', replace_existing=False)
+        create_uv_layer(mesh, 'TEXCOORD.xy', replace_existing=False)
+        copy_uv_layer(mesh, 'TEXCOORD.xy', 'TEXCOORD1.xy', replace_existing=False)
+        create_uv_layer_from_frontal_projection(mesh, 'TEXCOORD2.xy', replace_existing=False)
             
         print(f'Merged object build time: {time.time() - start_time :.3f}s ({self.merged_object.vertex_count} vertices, {self.merged_object.index_count} indices)')
 
