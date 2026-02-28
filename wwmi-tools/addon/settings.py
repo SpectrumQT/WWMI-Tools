@@ -235,6 +235,12 @@ class WWMI_Settings(bpy.types.PropertyGroup):
         description="Fill gaps in Vertex Groups list based on VG names (i.e. add group '1' between '0' and '2' if it's missing)",
         default=True,
     ) # type: ignore
+    
+    fill_missing_mesh_data: BoolProperty(
+        name="Fill Missing Mesh Data",
+        description="Automatically generate missing COLOR (fill with [0, 0.25, 0, 1.0]), COLOR1 (black), TEXCOORD.xy (empty UV), TEXCOORD1.xy (copy of TEXCOORD.xy) and TEXCOORD2.xy (frontal projection)",
+        default=True,
+    ) # type: ignore
 
     unrestricted_custom_shape_keys: BoolProperty(
         name="Unrestricted Custom Shape Keys",

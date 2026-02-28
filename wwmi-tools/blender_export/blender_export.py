@@ -12,7 +12,7 @@ from ..migoto_io.blender_interface.objects import *
 from ..migoto_io.blender_interface.mesh import *
 from ..migoto_io.data_model.byte_buffer import NumpyBuffer
 from ..migoto_io.data_model.data_model import DataModel
-from ..migoto_io.blender_tools.meshes import create_color_attribute, create_uv_layer, copy_uv_layer, create_uv_layer_from_frontal_projection
+from ..migoto_io.blender_tools.meshes import *
 
 from ..extract_frame_data.metadata_format import read_metadata, ExtractedObject
 
@@ -29,6 +29,48 @@ class Fatal(Exception): pass
 data_models: Dict[str, DataModel] = {
     'WWMI': DataModelWWMI(),
 }
+
+
+class ObjectMergerWWMI(ObjectMerger):
+    def fill_missing_temp_objects_data(self):
+        objects = [temp_object.object for component in self.components for temp_object in component.objects]
+        self.fill_missing_data(objects)
+
+    @staticmethod
+    def fill_missing_data(objects):
+        verts_dict, center, scale = None, None, None
+        for object in objects:
+            mesh = object.data
+            # Fill missing COLOR
+            if not mesh.attributes.get('COLOR', None):
+                data = numpy.zeros((len(mesh.loops), 4), dtype=numpy.float32)
+                data[:, 1] = 0.25
+                data[:, 3] = 1.0
+                create_color_attribute(mesh, 'COLOR', data)
+            # Fill missing COLOR1
+            if not mesh.attributes.get('COLOR1', None):
+                data = numpy.zeros((len(mesh.loops), 4), dtype=numpy.float32)
+                create_color_attribute(mesh, 'COLOR1', data)
+            # Fill missing TEXCOORD.xy
+            if not mesh.uv_layers.get('TEXCOORD.xy'):
+                create_uv_layer(mesh, 'TEXCOORD.xy')
+            # Fill missing TEXCOORD1.xy
+            if not mesh.uv_layers.get('TEXCOORD1.xy'):
+                copy_uv_layer(mesh, 'TEXCOORD.xy', 'TEXCOORD1.xy')
+            # Fill missing TEXCOORD2.xy
+            if not mesh.uv_layers.get('TEXCOORD2.xy'):
+                if verts_dict is None:
+                    verts_dict = collect_vertices([object.data for object in objects])
+                    # Compute bounding box from all parts
+                    center, scale = compute_bounding_box_from_frontal_projection(verts_dict)
+                # Generate UV using pre-collected vertices
+                create_uv_layer_from_frontal_projection(
+                    mesh=mesh,
+                    verts=verts_dict[mesh],
+                    center=center,
+                    scale=scale,
+                    uv_layer_name='TEXCOORD2.xy'
+                )
 
 
 # TODO: Add support of export of unhandled semantics from vertex attributes
@@ -119,7 +161,7 @@ class ModExporter:
     def build_merged_object(self):
         start_time = time.time()
         
-        object_merger = ObjectMerger(
+        object_merger = ObjectMergerWWMI(
             extracted_object=self.extracted_object,
             ignore_nested_collections=self.cfg.ignore_nested_collections,
             ignore_hidden_collections=self.cfg.ignore_hidden_collections,
@@ -129,19 +171,10 @@ class ModExporter:
             context=self.context,
             collection=self.cfg.component_collection,
             skeleton_type=SkeletonType.Merged if self.cfg.mod_skeleton_type == 'MERGED' else SkeletonType.PerComponent,
+            fill_missing_mesh_data=self.cfg.fill_missing_mesh_data,
             add_missing_vertex_groups=self.cfg.add_missing_vertex_groups,
         )
         self.merged_object = object_merger.merged_object
-
-        mesh = self.merged_object.object.data
-        if not mesh.attributes.get('COLOR', None):
-            data = numpy.zeros((len(mesh.loops), 4), dtype=numpy.float32)
-            data[:, 1] = 0.25
-            data[:, 3] = 1.0
-            create_color_attribute(mesh, 'COLOR', data, replace_existing=False)
-        create_uv_layer(mesh, 'TEXCOORD.xy', replace_existing=False)
-        copy_uv_layer(mesh, 'TEXCOORD.xy', 'TEXCOORD1.xy', replace_existing=False)
-        create_uv_layer_from_frontal_projection(mesh, 'TEXCOORD2.xy', replace_existing=False)
             
         print(f'Merged object build time: {time.time() - start_time :.3f}s ({self.merged_object.vertex_count} vertices, {self.merged_object.index_count} indices)')
 
