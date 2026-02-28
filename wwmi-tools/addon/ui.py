@@ -99,16 +99,24 @@ class WWMI_TOOLS_PT_SIDEBAR(bpy.types.Panel):
         cfg = context.scene.wwmi_tools_settings
         layout = self.layout
 
-        layout.row().operator(WWMI_ApplyModifierForObjectWithShapeKeysOperator.bl_idname)
+        layout.label(text='Vertex Groups Operations:')
+
         layout.row().operator(WWMI_MergeVertexGroups.bl_idname)
-        layout.row().operator(WWMI_FillGapsInVertexGroups.bl_idname)
         layout.row().operator(WWMI_RemoveUnusedVertexGroups.bl_idname)
         layout.row().operator(WWMI_RemoveAllVertexGroups.bl_idname)
+        layout.row().operator(WWMI_FillGapsInVertexGroups.bl_idname)
+
+        layout.label(text='Multi Sculpt (cross-object):')
+
         layout.row().operator(WWMI_CreateMergedObject.bl_idname)
         layout.row().operator(WWMI_ApplyMergedObjectSculpt.bl_idname)
         layout.row().operator(WWMI_ApplyMergedObjectSculptWithShapekeys.bl_idname)
+
+        layout.label(text='Utility:')
+
+        layout.row().operator(WWMI_FillMissingMeshData.bl_idname)
+        layout.row().operator(WWMI_ApplyModifierForObjectWithShapeKeysOperator.bl_idname)
         layout.row().operator(WWMI_ConvertVertexColors.bl_idname)
-        
 
     def draw_menu_export_mod(self, context):
         cfg = context.scene.wwmi_tools_settings
@@ -253,6 +261,7 @@ class WWMI_TOOLS_PT_SidePanelAdvancedExport(bpy.types.Panel):
         if not cfg.partial_export:
             layout.row().prop(cfg, 'skip_known_cubemap_textures')
             layout.row().prop(cfg, 'add_missing_vertex_groups')
+            layout.row().prop(cfg, 'fill_missing_mesh_data')
             layout.row().prop(cfg, 'unrestricted_custom_shape_keys')
             if cfg.mod_skeleton_type == 'MERGED':
                 layout.row().prop(cfg, 'skeleton_scale')

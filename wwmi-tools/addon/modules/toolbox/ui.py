@@ -8,6 +8,7 @@ from ...exceptions import clear_error, ConfigError
 from ....migoto_io.blender_tools.vertex_groups import *
 from ....migoto_io.blender_tools.modifiers import *
 from ....migoto_io.blender_tools.meshes import *
+from ....blender_export.blender_export import ObjectMergerWWMI
 
 
 class WWMI_MergeVertexGroups(bpy.types.Operator):
@@ -223,3 +224,18 @@ class WWMI_ConvertVertexColors(bpy.types.Operator):
             
         return {'FINISHED'}
     
+
+class WWMI_FillMissingMeshData(bpy.types.Operator):
+    bl_idname = "wwmi_tools.fill_missing_mesh_data"
+    bl_label = "Fill Missing Mesh Data"
+    bl_description = "Generate missing COLOR (fill with [0, 0.25, 0, 1.0]), COLOR1 (black), TEXCOORD.xy (empty UV), TEXCOORD1.xy (copy of TEXCOORD.xy) and TEXCOORD2.xy (frontal projection). Make sure to select all objects that are intended to be exported, even ones with listed data filled"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        try:
+            ObjectMergerWWMI.fill_missing_data(context.selected_objects)
+            
+        except ValueError as e:
+            self.report({'ERROR'}, str(e))
+            
+        return {'FINISHED'}
