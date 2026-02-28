@@ -12,6 +12,7 @@ from ..migoto_io.blender_interface.objects import *
 from ..migoto_io.blender_interface.mesh import *
 from ..migoto_io.data_model.byte_buffer import NumpyBuffer
 from ..migoto_io.data_model.data_model import DataModel
+from ..migoto_io.blender_tools.meshes import create_color_attribute, create_uv_layer, copy_uv_layer, create_uv_layer_from_frontal_projection
 
 from ..extract_frame_data.metadata_format import read_metadata, ExtractedObject
 
@@ -117,6 +118,7 @@ class ModExporter:
 
     def build_merged_object(self):
         start_time = time.time()
+        
         object_merger = ObjectMerger(
             extracted_object=self.extracted_object,
             ignore_nested_collections=self.cfg.ignore_nested_collections,
@@ -127,11 +129,20 @@ class ModExporter:
             context=self.context,
             collection=self.cfg.component_collection,
             skeleton_type=SkeletonType.Merged if self.cfg.mod_skeleton_type == 'MERGED' else SkeletonType.PerComponent,
-            mesh_scale=0.01,
-            mesh_rotation=(0, 0, 180),
             add_missing_vertex_groups=self.cfg.add_missing_vertex_groups,
         )
         self.merged_object = object_merger.merged_object
+
+        mesh = self.merged_object.object.data
+        if not mesh.attributes.get('COLOR', None):
+            data = numpy.zeros((len(mesh.loops), 4), dtype=numpy.float32)
+            data[:, 1] = 0.25
+            data[:, 3] = 1.0
+            create_color_attribute(mesh, 'COLOR', data, replace_existing=False)
+        create_uv_layer(mesh, 'TEXCOORD0.xy', replace_existing=False)
+        copy_uv_layer(mesh, 'TEXCOORD.xy', 'TEXCOORD01.xy', replace_existing=False)
+        create_uv_layer_from_frontal_projection(mesh, 'TEXCOORD02.xy', replace_existing=False)
+            
         print(f'Merged object build time: {time.time() - start_time :.3f}s ({self.merged_object.vertex_count} vertices, {self.merged_object.index_count} indices)')
 
     def build_data_buffers(self):
@@ -153,14 +164,16 @@ class ModExporter:
                 index_layout.append(component.index_count)
                 
         self.buffers, vertex_count = data_model.get_data(
-            self.context, 
-            self.cfg.component_collection, 
-            self.merged_object.object, 
-            self.merged_object.mesh, 
-            self.excluded_buffers,
-            buffers_format,
-            self.cfg.mirror_mesh,
-            index_layout)
+            context=self.context, 
+            collection=self.cfg.component_collection, 
+            obj=self.merged_object.object, 
+            excluded_buffers=self.excluded_buffers,
+            buffers_format=buffers_format,
+            mirror_mesh=self.cfg.mirror_mesh,
+            mesh_scale=100,
+            mesh_rotation=(0, 0, 180),
+            object_index_layout=index_layout,
+        )
 
         self.merged_object.vertex_count = vertex_count
         self.merged_object.shapekeys.vertex_count = len(self.buffers.get('ShapeKeyVertexId', []))
