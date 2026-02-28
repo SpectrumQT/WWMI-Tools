@@ -55,28 +55,33 @@ class DataModelWWMI(DataModel):
         self.flip_winding = True
         self.flip_bitangent_sign = True
         self.flip_texcoord_v = True
-        self.semantic_converters = {
+        self.semantic_converters = {}
+        self.format_converters = {}
+        self.semantic_encoders = {
             # Reshape flat array [[0,0,0],[0,0,0]] to [[0,0,0,1],[0,0,0,1]]
             AbstractSemantic(Semantic.Tangent, 0): [lambda data: self.converter_resize_second_dim(data, 4, fill=1)],
             # Normalize weights to 8-bit values, skip sanitizing since it's already done by DataExtractor
             AbstractSemantic(Semantic.Blendweight, 0): [lambda data: self.converter_normalize_wights_8bit(data, sanitize_weights=False)],
         }
-        self.format_converters = {
+        self.format_encoders = {
             # Reshape flat array [0,1,2,3,4,5] to [[0,1,2],[3,4,5]]
             AbstractSemantic(Semantic.Index): [lambda data: self.converter_reshape_second_dim(data, 3)],
             # Trim color array [[1,1,0,0],[1,1,0,0]] to [[1,1],[1,1]]
             AbstractSemantic(Semantic.Color, 1): [lambda data: self.converter_resize_second_dim(data, 2)],
         }
 
-    def get_data(self, 
-                 context: bpy.types.Context, 
-                 collection: bpy.types.Collection, 
-                 obj: bpy.types.Object, 
-                 mesh: bpy.types.Mesh, 
-                 excluded_buffers: List[str],
-                 buffers_format: Optional[Dict[str, BufferLayout]] = None,
-                 mirror_mesh: bool = False,
-                 object_index_layout: Optional[List[int]] = None) -> Tuple[Dict[str, NumpyBuffer], int, Optional[List[int]]]:
+    def get_data(
+            self,
+            context: bpy.types.Context,
+            collection: bpy.types.Collection,
+            obj: bpy.types.Object,
+            excluded_buffers: List[str],
+            buffers_format: Optional[Dict[str, BufferLayout]] = None,
+            mirror_mesh: bool = False,
+            mesh_scale: float = 1.0,
+            mesh_rotation: Tuple[float] = (0.0, 0.0, 0.0),
+            object_index_layout: Optional[List[int]] = None,
+        ) -> Tuple[Dict[str, NumpyBuffer], int, Optional[List[int]]]:
 
         if buffers_format is None:
             buffers_format = self.buffers_format
@@ -98,7 +103,17 @@ class DataModelWWMI(DataModel):
         #     BufferSemantic(AbstractSemantic(Semantic.Normal, 1), DXGIFormat.R32G32B32_FLOAT),
         # ])
 
-        index_data, vertex_buffer = self.export_data(context, collection, mesh, excluded_buffers, buffers_format, mirror_mesh, build_blend_remaps)
+        index_data, vertex_buffer = self.export_data(
+            context=context,
+            collection=collection,
+            mesh=obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh(),
+            excluded_buffers=excluded_buffers,
+            buffers_format=buffers_format,
+            mirror_mesh=mirror_mesh,
+            mesh_scale=mesh_scale,
+            mesh_rotation=mesh_rotation,
+            cache_index_data=build_blend_remaps,
+        )
 
         buffers = self.build_buffers(index_data, vertex_buffer, excluded_buffers, buffers_format)
 
@@ -142,16 +157,20 @@ class DataModelWWMI(DataModel):
                 blend_remaps = self.build_blend_remap(context, object_index_layout, index_buffer, blend_buffer, vg_buffer)
                 buffers.update(blend_remaps)
 
-        shapekeys = self.export_shapekeys(obj, vertex_ids, excluded_buffers, mirror_mesh)
+        shapekeys = self.export_shapekeys(obj, vertex_ids, excluded_buffers, mirror_mesh, mesh_scale, mesh_rotation)
         buffers.update(shapekeys)
 
         return buffers, len(vertex_ids)
 
-    def export_shapekeys(self, 
-                         obj: bpy.types.Object,  
-                         vertex_ids: numpy.ndarray, 
-                         excluded_buffers: List[str],
-                         mirror_mesh: bool = False) -> Dict[str, NumpyBuffer]:
+    def export_shapekeys(
+            self, 
+            obj: bpy.types.Object,  
+            vertex_ids: numpy.ndarray, 
+            excluded_buffers: List[str],
+            mirror_mesh: bool = False,
+            mesh_scale: float = 1.0,
+            mesh_rotation: Tuple[float] = (0.0, 0.0, 0.0),
+        ) -> Dict[str, NumpyBuffer]:
         
         start_time = time.time()
 
@@ -207,7 +226,7 @@ class DataModelWWMI(DataModel):
         if len(shapekey_vertex_ids) == 0:
             return {}
 
-        shapekey_offsets = numpy.array(shapekey_offsets)
+        shapekey_offsets = numpy.array(shapekey_offsets, dtype=numpy.uint32)
         
         shapekey_vertex_offsets_np = numpy.zeros(len(shapekey_vertex_offsets), dtype=(numpy.float16, 6))
         # shapekey_vertex_offsets = numpy.zeros(len(shapekey_vertex_offsets), dtype=numpy.float16)
@@ -215,6 +234,12 @@ class DataModelWWMI(DataModel):
 
         if mirror_mesh:
             shapekey_vertex_offsets_np[:, 0] *= -1
+
+        if mesh_rotation != (0.0, 0.0, 0.0):
+            shapekey_vertex_offsets_np[:, 0:3] = self.converter_rotate_vector(shapekey_vertex_offsets_np[:, 0:3], mesh_rotation)
+
+        if mesh_scale != 1.0:
+            shapekey_vertex_offsets_np[:, 0:3] = self.converter_scale_vector(shapekey_vertex_offsets_np[:, 0:3], mesh_scale)
 
         shapekey_vertex_ids = numpy.array(shapekey_vertex_ids, dtype=numpy.uint32)
 
@@ -226,12 +251,14 @@ class DataModelWWMI(DataModel):
 
         return buffers
 
-    def build_blend_remap(self, 
-                         context: bpy.types.Context, 
-                         index_layout: List[int], 
-                         index_buffer: NumpyBuffer,
-                         blend_buffer: NumpyBuffer,
-                         vg_buffer: NumpyBuffer) -> Dict[str, NumpyBuffer]:
+    def build_blend_remap(
+            self, 
+            context: bpy.types.Context, 
+            index_layout: List[int], 
+            index_buffer: NumpyBuffer,
+            blend_buffer: NumpyBuffer,
+            vg_buffer: NumpyBuffer,
+        ) -> Dict[str, NumpyBuffer]:
         
         start_time = time.time()
 
