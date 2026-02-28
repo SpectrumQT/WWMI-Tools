@@ -524,7 +524,7 @@ class DataModel:
         converters[abstract_semantic].insert(0, converter)
             
     @staticmethod
-    def converter_normalize_weights(weights: numpy.ndarray, sanitize=True, dtype=numpy.dtype):
+    def converter_normalize_weights_old(weights: numpy.ndarray, sanitize=True, dtype=numpy.dtype):
         """
         Normalizes 2-dim array of per-vertex float32 weights to uint8 (0-255 range) or uint16 (0-65535 range)
         Precision error caused by float truncation is distributed according to precision loss factor
@@ -591,10 +591,12 @@ class DataModel:
         return normalized_weights
     
     @staticmethod
-    def converter_normalize_weights_optimized(weights: numpy.ndarray, sanitize=True, dtype=numpy.dtype):
+    def converter_normalize_weights(weights: numpy.ndarray, sanitize=True, dtype=numpy.dtype):
         """
-        Optimized version of converter_normalize_weights with identical output to original.
-        Supports uint8 and uint16 targets.
+        Normalizes 2-dim array of per-vertex float32 weights to uint8 (0-255 range) or uint16 (0-65535 range)
+        Precision error caused by float truncation is distributed according to precision loss factor
+        Precision loss factor is calculated as (weight_float_part / weight_integer_part)
+        Weights with bigger precision loss factors are getting 1's from total precision error value
         """
         # Step 0: Detect quantization target
         if dtype == numpy.uint8:
@@ -654,7 +656,7 @@ class DataModel:
         return truncated
 
     @staticmethod
-    def converter_normalize_wights_8bit(weights: numpy.ndarray, sanitize_weights=True):
+    def converter_normalize_weights_8bit(weights: numpy.ndarray, sanitize_weights=True):
         """
         Normalizes 2-dim array of per-vertex float32 weights to uint8 (0-255 range)
         Precision error caused by float truncation is distributed according to precision loss factor
