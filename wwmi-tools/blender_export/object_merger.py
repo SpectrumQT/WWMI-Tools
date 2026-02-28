@@ -75,6 +75,7 @@ class ObjectMerger:
     collection: str
     skeleton_type: SkeletonType
     add_missing_vertex_groups: bool = False
+    fill_missing_mesh_data: bool = False
     # Output
     merged_object: MergedObject = field(init=False)
 
@@ -85,7 +86,11 @@ class ObjectMerger:
         self.initialize_components()
         try:
             self.import_objects_from_collection()
-            self.prepare_temp_objects()
+            self.finalize_temp_objects_geometry()
+            if self.fill_missing_mesh_data:
+                self.fill_missing_temp_objects_data()
+            self.finalize_temp_objects_data()
+            self.finalize_temp_objects_stats()
             self.build_merged_object()
         except Exception as e:
             self.remove_temp_objects()
@@ -139,15 +144,12 @@ class ObjectMerger:
 
         if num_objects == 0:
             raise ValueError(f'No eligible `Component` objects found!')
-
-    def prepare_temp_objects(self):
-
-        index_offset = 0
-
-        for component_id, component in enumerate(self.components):
-
+        
+        for component in self.components:
             component.objects.sort(key=lambda x: x.name)
 
+    def finalize_temp_objects_geometry(self):
+        for component_id, component in enumerate(self.components):
             for temp_object in component.objects:
                 temp_obj = temp_object.object
                 # Remove muted shape keys
@@ -167,7 +169,15 @@ class ObjectMerger:
                     if self.apply_modifiers:
                         bpy.ops.object.convert(target='MESH')
                     # Triangulate (this step is crucial since export supports only triangles)
-                    triangulate_object(self.context, temp_obj)
+                    triangulate_object(self.context, obj)
+
+    def fill_missing_temp_objects_data(self):
+        pass
+
+    def finalize_temp_objects_data(self):
+        for component_id, component in enumerate(self.components):
+            for temp_object in component.objects:
+                temp_obj = temp_object.object
                 # Handle Vertex Groups
                 vertex_groups = get_vertex_groups(temp_obj)
                 # Fill gaps in Vertex Groups list based on VG names (i.e. add group '1' between '0' and '2' if it's missing)
@@ -187,6 +197,12 @@ class ObjectMerger:
                 # Rename VGs to their indicies to merge ones of different components together
                 for vg in get_vertex_groups(temp_obj):
                     vg.name = str(vg.index)
+
+    def finalize_temp_objects_stats(self):
+        index_offset = 0
+        for component_id, component in enumerate(self.components):
+            for temp_object in component.objects:
+                temp_obj = temp_object.object
                 # Calculate vertex count of temporary object
                 temp_object.vertex_count = len(temp_obj.data.vertices)
                 # Calculate index count of temporary object, IB stores 3 indices per triangle
