@@ -118,7 +118,7 @@ def convert_vertex_colors_storage_format(context):
 
         with OpenObject(context, selected_obj, 'OBJECT') as obj:
 
-            mesh = obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh()
+            mesh = obj.data
 
             if not hasattr(mesh, 'vertex_colors'):
                 continue
@@ -146,3 +146,85 @@ def convert_vertex_colors_storage_format(context):
                 print(f"[{obj.name}]: Converted legacy color layer `{semantic_name}` to Linear")
 
             obj.data.update()
+
+
+def create_color_attribute(mesh: bpy.types.Mesh, color_layer_name: str, data: numpy.ndarray | None = None, replace_existing: bool = False):
+    vertex_attribute = mesh.attributes.get(color_layer_name, None)
+    if replace_existing and vertex_attribute:
+        mesh.attributes.remove(vertex_attribute)
+    elif vertex_attribute:
+        return
+
+    vertex_attribute = mesh.attributes.new(name=color_layer_name, type='FLOAT_COLOR', domain='CORNER')
+    vertex_attribute.data.foreach_set('color', data.flatten())
+
+
+def create_uv_layer(mesh: bpy.types.Mesh, uv_layer_name: str, data: numpy.ndarray | None = None, replace_existing: bool = False):
+    uv_layer = mesh.uv_layers.get(uv_layer_name, None)
+    if replace_existing and uv_layer:
+        mesh.uv_layers.remove(uv_layer)
+    elif uv_layer:
+        return
+
+    uv_layer = mesh.uv_layers.new(name=uv_layer_name)
+    if data is None:
+        data = numpy.zeros(len(uv_layer.data) * 2, dtype=numpy.float32)
+    uv_layer.data.foreach_set('uv', data)
+
+
+def copy_uv_layer(mesh: bpy.types.Mesh, src_uv_layer_name: str, dst_uv_layer_name: str, replace_existing: bool = False):
+    uv_layer = mesh.uv_layers.get(dst_uv_layer_name, None)
+    if replace_existing and uv_layer:
+        mesh.uv_layers.remove(uv_layer)
+    elif uv_layer:
+        return
+    
+    src_uv_layer = mesh.uv_layers.get(src_uv_layer_name, None)
+    dst_uv_layer = mesh.uv_layers.new(name=dst_uv_layer_name)
+
+    data = numpy.zeros(len(dst_uv_layer.data) * 2, dtype=numpy.float32)
+
+    src_uv_layer.data.foreach_get('uv', data)
+    dst_uv_layer.data.foreach_set('uv', data)
+
+
+def create_uv_layer_from_frontal_projection(mesh: bpy.types.Mesh, uv_layer_name: str, replace_existing: bool = False):
+    # Get vertices as Nx3 NumPy array
+    verts = numpy.empty((len(mesh.vertices), 3), dtype=numpy.float32)
+    mesh.vertices.foreach_get('co', verts.ravel())
+
+    # Project along Y
+    uv = verts[:, [0, 2]]
+
+    # Compute bounding box
+    min_uv = uv.min(axis=0)
+    max_uv = uv.max(axis=0)
+    center = (min_uv + max_uv) * 0.5
+    size = max_uv - min_uv
+    scale = size.max()
+
+    # Normalize around center
+    uv = (uv - center) / scale   # now centered at (0,0), largest dimension = 1
+
+    # Apply parameters
+    uv *= 0.98
+
+    # Move to UV center (0.5, 0.5)
+    uv += 0.5
+
+    # Map vertex UVs to loops
+    loop_vert_indices = numpy.empty(len(mesh.loops), dtype=numpy.int32)
+    mesh.loops.foreach_get('vertex_index', loop_vert_indices)
+
+    data = uv[loop_vert_indices].ravel()
+
+    create_uv_layer(mesh, uv_layer_name, data, replace_existing)
+
+
+def create_uv_layer_from_frontal_projection_for_objects(context: bpy.types.Context, uv_layer_name: str):
+    for selected_obj in context.selected_objects:
+        with OpenObject(context, selected_obj, 'OBJECT') as obj:
+            mesh = obj.data
+            create_uv_layer_from_frontal_projection(mesh, uv_layer_name, replace_existing=True)
+            print(f"[{obj.name}]: Created UV layer `{uv_layer_name}` (frontal projection)")
+            mesh.update()
