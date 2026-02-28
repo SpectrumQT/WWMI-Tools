@@ -267,10 +267,9 @@ class BlenderDataExtractor:
             if semantic == Semantic.Position:
                 data = self.fetch_data(mesh.vertices, 'undeformed_co', numpy_type, size)
             elif semantic == Semantic.Blendindices:
-                dtype = numpy_type[0] if isinstance(numpy_type, tuple) else numpy_type
                 num_vgs = buffer_semantic.get_num_values()
                 data = numpy.array([[vg.group for vg in groups[:num_vgs]] + [0] * (num_vgs - len(groups))
-                                    for groups in vertex_groups], dtype=dtype)
+                                    for groups in vertex_groups], dtype=numpy.uint32)
             elif semantic == Semantic.Blendweight:
                 dtype = numpy_type[0] if isinstance(numpy_type, tuple) else numpy_type
                 num_vgs = buffer_semantic.get_num_values()
