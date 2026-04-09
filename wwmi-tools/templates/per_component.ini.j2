@@ -1,4 +1,4 @@
-; WWMI BETA-5 INI
+; WWMI BETA-6 INI
 
 {%- macro note(text) %}{% if comment_code %}; {{ text }}{% else %};DEL{% endif %}{% endmacro %}
 
@@ -30,6 +30,12 @@ global $object_guid = {{ extracted_object.index_count }}
 global $mesh_vertex_count = {{ merged_object.vertex_count }}
 {{note("Number of shapekeyed vertices in custom model")}}
 global $shapekey_vertex_count = {{ merged_object.shapekeys.vertex_count }}
+{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{{note("ID of the first shapekeyed vertex of this shapekeys batch")}}
+global $shapekey_vertex_offset_batch{{ loop.index0 }} = {{ shapekey_batch.vertex_offset }}
+{{note("Number of shapekeyed vertices for this shapekeys batch")}}
+global $shapekey_vertex_count_batch{{ loop.index0 }} = {{ shapekey_batch.vertex_count }}
+{%- endfor %}
 {{note("ID assigned to our mod by WWMI")}}
 global $mod_id = -1000
 {{note("Controls whether our mod is enabled, prevents any overrides from happening if $mod_enabled == 0")}}
@@ -267,22 +273,34 @@ override_byte_stride = 4
 override_vertex_count = $mesh_vertex_count
 
 {{note("Updates ResourceShapeKeyCBRW that stores offsets of shapekeyed vertex lists, shape key values and multipliers")}}
-[CommandListSetupShapeKeys]
-{{note("Pass 4 byte checksum of shapekey offsets to ensure that we only modify expected values")}}
-$\WWMIv1\shapekey_checksum = {{ extracted_object.shapekeys.checksum }}
+[CommandListSetupShapeKeysBatch]
+{{note("Pass params for all batches, so CS could dynamically identify current batch and override its values at runtime")}}
+{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{{note("Pass 4 byte checksum of shapekey offsets of current batch to ensure that we only modify expected values")}}
+$\WWMIv1\shapekey_checksum_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].checksum }}
+{{note("Pass original vertex offset so shader could distinguigh batches with same checksum")}}
+$\WWMIv1\shapekey_vertex_offset_original_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].vertex_offset }}
+{{note("Pass modded vertex offset to override first vertex ID of current batch")}}
+$\WWMIv1\shapekey_vertex_offset_custom_batch{{ loop.index0 }} = $shapekey_vertex_offset_batch{{ loop.index0 }}
+{%- endfor %}
 {{note("Pass buffer with offsets for vertex lists of every shape key of custom model")}}
 cs-t33 = ResourceShapeKeyOffsetBuffer
 {{note("Pass buffer with custom values for every shape key, allows to control both custom and stock")}}
 cs-u5 = ResourceCustomShapeKeyValuesRW
 {{note("Pass buffer that gonna store result of calculations, required for Shape Key Loader CS to run")}}
 cs-u6 = ResourceShapeKeyCBRW
-{{note("Run ShapeKeyOverrider CS")}}
-run = CustomShader\WWMIv1\ShapeKeyOverrider
+{{note("Run ShapeKeyBatchOverrider CS")}}
+run = CustomShader\WWMIv1\ShapeKeyBatchOverrider
 
 {{note("Runs custom Shape Key Loader CS to, well, load shapekeys data from buffers")}}
-[CommandListLoadShapeKeys]
-{{note("Pass number of shapekeyed vertices to adjust required threads count via dipatch_y")}}
-$\WWMIv1\shapekey_vertex_count = $shapekey_vertex_count
+[CommandListLoadShapeKeysBatch]
+{{note("Pass params for all batches, so WWMI could dynamically calculate THREAD_GROUP_COUNT_Y")}}
+{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{{note("Pass original Y threads count for given batch (it allows WWMI to identify the call)")}}
+$\WWMIv1\shapekey_dispatch_size_y_original_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].dispatch_y }}
+{{note("Pass number of shapekeyed vertices for given batch (WWMI computes required THREAD_GROUP_COUNT_Y from it)")}}
+$\WWMIv1\shapekey_vertex_count_batch{{ loop.index0 }} = $shapekey_vertex_count_batch{{ loop.index0 }}
+{%- endfor %}
 {{note("Pass buffer with lists of per-vertex ids for every shape key")}}
 cs-t0 = ResourceShapeKeyVertexIdBuffer
 {{note("Pass buffer with lists of xyz per-vertex offsets for every shape key")}}
@@ -290,7 +308,7 @@ cs-t1 = ResourceShapeKeyVertexOffsetBuffer
 {{note("Pass buffer with shape key vertex lists offsets, and shape key values & multipliers")}}
 cs-u6 = ResourceShapeKeyCBRW
 {{note("Run ShapeKeyLoader CS")}}
-run = CustomShader\WWMIv1\ShapeKeyLoader
+run = CommandList\WWMIv1\LoadShapeKeysBatch
 
 {{note("Handles WWMI callback fired on original Shape Key Loader CS call")}}
 [TextureOverrideShapeKeyLoaderCallback]
@@ -305,9 +323,9 @@ if $mod_enabled
         {{note("Skip handling of original Shape Key Loader CS call to modify dispatch_y value")}}
         handling = skip
         {{note("Run custom Shape Key Overrider CS to prepare shape key resources for loading")}}
-        run = CommandListSetupShapeKeys
+        run = CommandListSetupShapeKeysBatch
         {{note("Run custom Shape Key Loader CS to load shape key resources")}}
-        run = CommandListLoadShapeKeys
+        run = CommandListLoadShapeKeysBatch
         {{note("endif")}}
     endif
 endif
@@ -384,7 +402,7 @@ array = 66
 {{note("* `2.0` means `override with one`")}}
 type = RWBuffer
 format = R32G32B32A32_FLOAT
-{{note("32 elements, 4 floats per element")}}
+array = {{ 32 * merged_object.shapekeys.batches | length }}
 array = 32
 {%- endif %}
 
