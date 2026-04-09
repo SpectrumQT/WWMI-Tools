@@ -9,10 +9,21 @@ from .data_extractor import ShapeKeyData, DrawData
 
 
 @dataclass
+class ShapeKeysDispatch:
+    vertex_offset: int = 0
+    vertex_count: int = 0
+    checksum: int = 0
+    dispatch_y: int = 0
+    shapekey_count: int = 0
+
+
+@dataclass
 class ShapeKeys:
     offsets_hash: str
     scale_hash: str = ''
-    dispatch_y: int = 0
+    vertex_ids_hash: str = ''
+    vertex_offsets_hash: str = ''
+    dispatches: list[ShapeKeysDispatch] = field(default_factory=list)
     shapekey_offsets: list = field(default_factory=lambda: [])
     # ShapeKey ID based indexed list of {VertexID: VertexOffsets}
     shapekeys_index: List[Dict[int, List[float]]] = field(default_factory=lambda: [])
@@ -76,51 +87,69 @@ class ShapeKeyBuilder:
 
         for shapekey_hash, shapekey_data in self.shapekey_data.items():
 
-            shapekey_offsets = shapekey_data.shapekey_offset_buffer.get_values(AbstractSemantic(Semantic.RawData))[0:128]
-            vertex_ids = shapekey_data.shapekey_vertex_id_buffer.get_values(AbstractSemantic(Semantic.RawData))
-            vertex_offsets = shapekey_data.shapekey_vertex_offset_buffer.get_values(AbstractSemantic(Semantic.RawData))
-
-            # Detect last non-zero entry in the vertex_offsets buffer consisting of 3 floats and 3 zeroes per row
-            # vertex_offsets_len = int(len(vertex_offsets) / 6)
-            # last_data_entry_id = vertex_offsets_len - 1
-            # for entry_id in reversed(range(vertex_offsets_len)):
-            #     vertex_offset = vertex_offsets[entry_id * 6:entry_id * 6 + 6]
-            #     if any(v != 0 for v in vertex_offset):
-            #         break
-            #     last_data_entry_id = entry_id
-
-            # Original buffer doesn't contain offset for 129th group, but we'll need it for the loop below
-            # last_shapekey_offset = shapekey_offsets[-1]
-            # if last_shapekey_offset > last_data_entry_id:
-            #     shapekey_offsets.append(last_shapekey_offset)
-            # else:
-            #     shapekey_offsets.append(last_data_entry_id + 1)
-
-            last_data_entry_id = shapekey_offsets[-1]
-
             # Process shapekey entries, we'll build both VertexID and ShapeKeyID based outputs for fast indexing
             shapekeys_index = []
             indexed_shapekeys = {}
-            for shapekey_id, first_entry_id in enumerate(shapekey_offsets):
-                # Stop processing if next entries have no data
-                if first_entry_id >= last_data_entry_id:
-                    break
-                # Process all entries from current shapekey offset 'till offset of the next shapekey
-                entries = {}
-                for entry_id in range(first_entry_id, shapekey_offsets[shapekey_id + 1]):
-                    vertex_id = vertex_ids[entry_id]
-                    vertex_offset = vertex_offsets[entry_id * 6:entry_id * 6 + 3]
-                    entries[vertex_id] = vertex_offset
-                    if vertex_id not in indexed_shapekeys:
-                        indexed_shapekeys[vertex_id] = {}
-                    indexed_shapekeys[vertex_id][shapekey_id] = vertex_offset
-                shapekeys_index.append(entries)
+            indexed_offsets = []
+
+            dispatches = []
+
+            shapekey_id_offset = 0
+
+            for entry in shapekey_data.entries:
+                cb_data = entry.shapekey_offset_buffer.get_values(AbstractSemantic(Semantic.RawData))
+                batch_vertex_offset = cb_data[261]
+
+                if batch_vertex_offset > 0 and indexed_offsets[-1] != batch_vertex_offset:
+                    raise ValueError(f'Invalid offset {batch_vertex_offset} for shapekey batch (last offset is {indexed_offsets[-1]})')
+                
+                shapekey_offsets = cb_data[0:128]
+                vertex_ids = entry.shapekey_vertex_id_buffer.get_values(AbstractSemantic(Semantic.RawData))[batch_vertex_offset:]
+                vertex_offsets = entry.shapekey_vertex_offset_buffer.get_values(AbstractSemantic(Semantic.RawData))[batch_vertex_offset*6:]
+
+                last_data_entry_id = shapekey_offsets[-1]
+                shapekey_count = 0
+
+                for shapekey_id, first_entry_id in enumerate(shapekey_offsets):
+                    # Stop processing if next entries have no data
+                    if first_entry_id >= last_data_entry_id:
+                        shapekey_count = shapekey_id
+                        break
+                    # Process all entries from current shapekey offset 'till offset of the next shapekey
+                    entries = {}
+                    for entry_id in range(first_entry_id, shapekey_offsets[shapekey_id + 1]):
+                        vertex_id = vertex_ids[entry_id]
+                        vertex_offset = vertex_offsets[entry_id * 6:entry_id * 6 + 3]
+                        entries[vertex_id] = vertex_offset
+                        if vertex_id not in indexed_shapekeys:
+                            indexed_shapekeys[vertex_id] = {}
+                        indexed_shapekeys[vertex_id][shapekey_id_offset + shapekey_id] = vertex_offset
+                    shapekeys_index.append(entries)
+
+                dispatches.append(ShapeKeysDispatch(
+                    vertex_offset=batch_vertex_offset,
+                    vertex_count=shapekey_offsets[-1],
+                    checksum=sum(shapekey_offsets[0:4]),
+                    dispatch_y=entry.dispatch_y,
+                    shapekey_count=shapekey_count,
+                ))
+
+                if batch_vertex_offset > 0:
+                    shapekey_offsets = [batch_vertex_offset + x for x in shapekey_offsets]
+                    shapekey_offsets = shapekey_offsets[1:]
+
+                indexed_offsets += shapekey_offsets
+                shapekey_id_offset += shapekey_count
+
+            # dispatches = sorted(dispatches, key=lambda d: d.vertex_offset)
 
             self.shapekeys[shapekey_hash] = ShapeKeys(
                 offsets_hash=shapekey_data.shapekey_hash,
                 scale_hash=shapekey_data.shapekey_scale_hash,
-                dispatch_y=shapekey_data.dispatch_y,
-                shapekey_offsets=shapekey_offsets,
+                vertex_ids_hash=shapekey_data.vertex_ids_hash,
+                vertex_offsets_hash=shapekey_data.vertex_offsets_hash,
+                dispatches=dispatches,
+                shapekey_offsets=indexed_offsets,
                 shapekeys_index=shapekeys_index,
                 indexed_shapekeys=indexed_shapekeys,
             )

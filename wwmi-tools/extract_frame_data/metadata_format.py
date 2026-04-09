@@ -51,13 +51,35 @@ class ExtractedObjectComponent:
 
 
 @dataclass
-class ExtractedObjectShapeKeys:
-    offsets_hash: str = ''
-    scale_hash: str = ''
+class ExtractedObjectShapeKeysBatch:
+    vertex_offset: int = 0
     vertex_count: int = 0
+    shapekey_count: int = 0
     dispatch_y: int = 0
     checksum: int = 0
 
+
+@dataclass
+class ExtractedObjectShapeKeys:
+    offsets_hash: str = ''
+    scale_hash: str = ''
+    vertex_ids_hash: str = ''
+    vertex_offsets_hash: str = ''
+    vertex_count: int = 0
+    shapekey_count: int = 0
+    batches: list[ExtractedObjectShapeKeysBatch] = field(default_factory=list)
+    # Deprecated
+    dispatch_y: int = 0
+    checksum: int = 0
+
+    def __post_init__(self):
+        # Fill shapekeys batch object data for old Metadata.json file
+        # Since earlier dumps had 1 batch only, it's perfectly safe to do
+        if not self.batches and self.checksum > 0:
+            self.batches = [ExtractedObjectShapeKeysBatch(
+                dispatch_y=self.dispatch_y,
+                checksum=self.checksum,
+            )]
 
 class EnumEncoder(json.JSONEncoder):
     def default(self, obj):

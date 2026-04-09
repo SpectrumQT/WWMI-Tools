@@ -15,13 +15,20 @@ class PoseConstantBufferFormat(Enum):
 
 
 @dataclass(frozen=True)
-class ShapeKeyData:
-    shapekey_hash: str
-    shapekey_scale_hash: str
+class ShapeKeyDataEntry:
     dispatch_y: int
     shapekey_offset_buffer: ByteBuffer
     shapekey_vertex_id_buffer: ByteBuffer
     shapekey_vertex_offset_buffer: ByteBuffer
+
+
+@dataclass(frozen=True)
+class ShapeKeyData:
+    shapekey_hash: str
+    shapekey_scale_hash: str
+    vertex_ids_hash: str
+    vertex_offsets_hash: str
+    entries: list[ShapeKeyDataEntry]
 
 
 @dataclass
@@ -83,23 +90,40 @@ class DataExtractor:
                 except Exception as e:
                     print(f'Warning! Failed to process Shape Key CS call {branch_call.call}, data may end up missing! (safe to ignore if no fatal errors)')
                     continue
+                
+                shapekey_hash = branch_call.resources['SHAPEKEY_OUTPUT'].hash
+                shapekey_scale_hash = branch_call.resources['SHAPEKEY_SCALE_OUTPUT'].hash
+                vertex_ids_hash = branch_call.resources['SHAPEKEY_VERTEX_ID_HASH'].hash
+                vertex_offsets_hash = branch_call.resources['SHAPEKEY_VERTEX_OFFSET_HASH'].hash
 
-                shape_key_data = ShapeKeyData(
-                    shapekey_hash=branch_call.resources['SHAPEKEY_OUTPUT'].hash,
-                    shapekey_scale_hash=branch_call.resources['SHAPEKEY_SCALE_OUTPUT'].hash,
-                    dispatch_y=branch_call.call.parameters[CallParameters.Dispatch].ThreadGroupCountY,
-                    shapekey_offset_buffer=branch_call.resources['SHAPEKEY_OFFSET_BUFFER'],
-                    shapekey_vertex_id_buffer=branch_call.resources['SHAPEKEY_VERTEX_ID_BUFFER'],
-                    shapekey_vertex_offset_buffer=branch_call.resources['SHAPEKEY_VERTEX_OFFSET_BUFFER'],
-                )
-
-                cached_shape_key_data = self.shape_key_data.get(shape_key_data.shapekey_hash, None)
+                cached_shape_key_data = self.shape_key_data.get(shapekey_hash, None)
 
                 if cached_shape_key_data is None:
-                    self.shape_key_data[shape_key_data.shapekey_hash] = shape_key_data
+                    shape_key_data = ShapeKeyData(
+                        shapekey_hash=shapekey_hash,
+                        shapekey_scale_hash=shapekey_scale_hash,
+                        vertex_ids_hash=vertex_ids_hash,
+                        vertex_offsets_hash=vertex_offsets_hash,
+                        entries=[ShapeKeyDataEntry(
+                            dispatch_y=branch_call.call.parameters[CallParameters.Dispatch].ThreadGroupCountY,
+                            shapekey_offset_buffer=branch_call.resources['SHAPEKEY_OFFSET_BUFFER'],
+                            shapekey_vertex_id_buffer=branch_call.resources['SHAPEKEY_VERTEX_ID_BUFFER'],
+                            shapekey_vertex_offset_buffer=branch_call.resources['SHAPEKEY_VERTEX_OFFSET_BUFFER'],
+                        )]
+                    )
+                    self.shape_key_data[shapekey_hash] = shape_key_data
                 else:
-                    if shape_key_data.dispatch_y != cached_shape_key_data.dispatch_y:
-                        raise ValueError(f'dispatch params mismatch for SHAPEKEY_CS_1')
+                    dispatch_y = branch_call.call.parameters[CallParameters.Dispatch].ThreadGroupCountY
+                    if any(getattr(entry, "dispatch_y", None) == dispatch_y for entry in cached_shape_key_data.entries):
+                        if shapekey_scale_hash != cached_shape_key_data.shapekey_scale_hash:
+                            raise ValueError(f'shapekey scale hash mismatch for SHAPEKEY_CS_1')
+                    else:
+                        cached_shape_key_data.entries.append(ShapeKeyDataEntry(
+                            dispatch_y=dispatch_y,
+                            shapekey_offset_buffer=branch_call.resources['SHAPEKEY_OFFSET_BUFFER'],
+                            shapekey_vertex_id_buffer=branch_call.resources['SHAPEKEY_VERTEX_ID_BUFFER'],
+                            shapekey_vertex_offset_buffer=branch_call.resources['SHAPEKEY_VERTEX_OFFSET_BUFFER'],
+                        ))
 
     def handle_shapekey_cs_2(self, call_branches):
         for call_branch in call_branches:

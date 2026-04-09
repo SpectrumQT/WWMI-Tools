@@ -46,8 +46,15 @@ class MergedObjectComponent:
 
 
 @dataclass
+class MergedObjectShapeKeysBatch:
+    vertex_count: int = field(default_factory=list)
+    vertex_offset: int = field(default_factory=list)
+
+
+@dataclass
 class MergedObjectShapeKeys:
     vertex_count: int = 0
+    batches: list[MergedObjectShapeKeysBatch] = field(default_factory=list)
 
 
 @dataclass

@@ -98,7 +98,8 @@ configuration = Configuration(
 
         'SHAPEKEY_OUTPUT': DataMap([Source('SHAPEKEY_CS_1', ShaderType.Empty, SlotType.UAV, SlotId(0))]),
         'SHAPEKEY_SCALE_OUTPUT': DataMap([Source('SHAPEKEY_CS_1', ShaderType.Empty, SlotType.UAV, SlotId(1))]),
-
+        'SHAPEKEY_VERTEX_ID_HASH': DataMap([Source('SHAPEKEY_CS_1', ShaderType.Compute, SlotType.Texture, SlotId(0))]),
+        'SHAPEKEY_VERTEX_OFFSET_HASH': DataMap([Source('SHAPEKEY_CS_1', ShaderType.Compute, SlotType.Texture, SlotId(1))]),
 
         'SHAPEKEY_INPUT': DataMap([Source('DRAW_VS', ShaderType.Empty, SlotType.VertexBuffer, SlotId(6), ignore_missing=True)]),
 
@@ -330,7 +331,7 @@ def extract_frame_data(cfg):
             min_file_size=cfg.skip_small_textures_size*1024 if cfg.skip_small_textures else 0,
             exclude_extensions=['jpg'] if cfg.skip_jpg_textures else [],
             exclude_same_slot_hash_textures=cfg.skip_same_slot_hash_textures,
-            exclude_hashes=['af26db30', '1320a071', '10d7937d', '87505b2b'] if cfg.skip_known_cubemap_textures else []
+            exclude_hashes=['af26db30', '1320a071', '10d7937d', '87505b2b', 'e5df00a8', 'ec2fecec', 'd313d349'] if cfg.skip_known_cubemap_textures else []
         )
     )
     

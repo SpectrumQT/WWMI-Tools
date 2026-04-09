@@ -10,7 +10,7 @@ from ..migoto_io.dump_parser.filename_parser import ResourceDescriptor
 
 from .shapekey_builder import ShapeKeys
 from .component_builder import MeshObject
-from .metadata_format import ExtractedObject, ExtractedObjectComponent, ExtractedObjectShapeKeys, ExtractedObjectBuffer, ExtractedObjectBufferSemantic
+from .metadata_format import ExtractedObject, ExtractedObjectComponent, ExtractedObjectShapeKeys, ExtractedObjectShapeKeysBatch, ExtractedObjectBuffer, ExtractedObjectBufferSemantic
 
 
 @dataclass
@@ -184,35 +184,44 @@ class OutputBuilder:
             ]),
         })
 
-        return ExtractedObject(
+        extracted_components = [
+            ExtractedObjectComponent(
+                vertex_offset=component.vertex_offset,
+                vertex_count=component.vertex_count,
+                index_offset=component.index_offset,
+                index_count=component.index_count,
+                vg_offset=component.vg_offset,
+                vg_count=component.vg_count,
+                vg_map=component.vg_map,
+            ) for component in mesh_object.components
+        ]
 
+        extracted_shapekeys = ExtractedObjectShapeKeys(
+            offsets_hash=shapekeys.offsets_hash,
+            scale_hash=shapekeys.scale_hash,
+            vertex_ids_hash=shapekeys.vertex_ids_hash,
+            vertex_offsets_hash=shapekeys.vertex_offsets_hash,
+            vertex_count=shapekeys.shapekey_offsets[-1],
+            shapekey_count=sum([dispatch.shapekey_count for dispatch in shapekeys.dispatches]),
+            batches=[
+                ExtractedObjectShapeKeysBatch(
+                    vertex_offset=dispatch.vertex_offset,
+                    vertex_count=dispatch.vertex_count,
+                    shapekey_count=dispatch.shapekey_count,
+                    dispatch_y=dispatch.dispatch_y,
+                    checksum=dispatch.checksum,
+                ) for dispatch in shapekeys.dispatches
+            ],
+        ) if shapekeys.shapekey_offsets else ExtractedObjectShapeKeys()
+
+        return ExtractedObject(
             vb0_hash=mesh_object.vb0_hash,
             cb4_hash=mesh_object.cb4_hash,
             vertex_count=mesh_object.vertex_count,
             index_count=mesh_object.index_count,
-
-            components=[
-                ExtractedObjectComponent(
-                    vertex_offset=component.vertex_offset,
-                    vertex_count=component.vertex_count,
-                    index_offset=component.index_offset,
-                    index_count=component.index_count,
-                    vg_offset=component.vg_offset,
-                    vg_count=component.vg_count,
-                    vg_map=component.vg_map,
-                ) for component in mesh_object.components
-            ],
-
-            shapekeys=ExtractedObjectShapeKeys(
-                offsets_hash=shapekeys.offsets_hash,
-                scale_hash=shapekeys.scale_hash,
-                vertex_count=shapekeys.shapekey_offsets[-1] - 1,
-                dispatch_y=shapekeys.dispatch_y,
-                checksum=sum(shapekeys.shapekey_offsets[0:4]),
-            ) if shapekeys.shapekey_offsets else ExtractedObjectShapeKeys(),
-
+            components=extracted_components,
+            shapekeys=extracted_shapekeys,
             export_format=export_format,
-            
         ).as_json()
 
     @staticmethod

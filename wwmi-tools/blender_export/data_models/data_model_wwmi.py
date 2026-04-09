@@ -3,7 +3,7 @@ import re
 import numpy
 import bpy
 import json
-
+import math
 
 from typing import Tuple, List, Dict, Optional
 
@@ -191,8 +191,6 @@ class DataModelWWMI(DataModel):
             print(f'Skipped shapekeys fetching!')
             return {}
 
-        shapekey_offsets, shapekey_vertex_ids, shapekey_vertex_offsets = [], [], []
-
         shapekey_pattern = re.compile(r'.*(?:deform|custom)[_ -]*(\d+).*')
         shapekey_ids = {}
         
@@ -205,23 +203,38 @@ class DataModelWWMI(DataModel):
 
         shapekeys = self.data_extractor.get_shapekey_data(obj, names_filter=list(shapekey_ids.values()), deduct_basis=True)
 
-        shapekey_verts_count = 0
-        for group_id in range(128):
+        max_key_id = max(shapekey_ids.keys())
+        batch_count = math.ceil(max_key_id / 127)
 
-            shapekey = shapekeys.get(shapekey_ids.get(group_id, -1), None)
-            if shapekey is None or not (-0.00000001 > numpy.min(shapekey) or numpy.max(shapekey) > 0.00000001):
-                shapekey_offsets.extend([shapekey_verts_count if shapekey_verts_count != 0 else 0])
-                continue
+        shapekey_offsets, shapekey_vertex_ids, shapekey_vertex_offsets = [], [], []
+        
+        for batch_id in range(batch_count):
+            # Offsets sequence always starts with 0 for any batch
+            shapekey_offsets.append(0)
+            shapekey_verts_count = 0
+            
+            # Single batch contains up to 127 shapekeys (since first value is always 0)
+            # So 254 shapekeys should be divided to 2 batches:
+            # Batch 0: from 0   to 126 (aka range(0,   127))
+            # Batch 1: from 127 to 253 (aka range(127, 254))
+            shapekey_id_offset = batch_id * 127
 
-            shapekey_offsets.extend([shapekey_verts_count])
+            for shapekey_id in range(shapekey_id_offset, shapekey_id_offset + 127):
 
-            shapekey = shapekey[vertex_ids]
+                shapekey = shapekeys.get(shapekey_ids.get(shapekey_id, -1), None)
+                if shapekey is None or not (-0.00000001 > numpy.min(shapekey) or numpy.max(shapekey) > 0.00000001):
+                    shapekey_offsets.append(shapekey_verts_count)
+                    continue
 
-            shapekey_vert_ids = numpy.where(numpy.any(shapekey != 0, axis=1))[0]
+                shapekey = shapekey[vertex_ids]
 
-            shapekey_vertex_ids.extend(shapekey_vert_ids)
-            shapekey_vertex_offsets.extend(shapekey[shapekey_vert_ids])
-            shapekey_verts_count += len(shapekey_vert_ids)
+                shapekey_vert_ids = numpy.where(numpy.any(shapekey != 0, axis=1))[0]
+
+                shapekey_verts_count += len(shapekey_vert_ids)
+                shapekey_offsets.append(shapekey_verts_count)
+
+                shapekey_vertex_ids.extend(shapekey_vert_ids)
+                shapekey_vertex_offsets.extend(shapekey[shapekey_vert_ids])
             
         if len(shapekey_vertex_ids) == 0:
             return {}
