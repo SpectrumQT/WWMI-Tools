@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'libs'))
 bl_info = {
     "name": "WWMI Tools",
     "version": (1, 7, 1),
-    "wwmi_version": (0, 9, 9),
+    "wwmi_version": (1, 0, 0),
     "blender": (3, 6, 0),
     "author": "SpectrumQT, LeoTorreZ, SinsOfSeven, SilentNightSound, DarkStarSword",
     "location": "View3D > Sidebar > Tool Tab",
