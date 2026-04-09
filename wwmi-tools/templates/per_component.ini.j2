@@ -402,8 +402,8 @@ array = 66
 {{note("* `2.0` means `override with one`")}}
 type = RWBuffer
 format = R32G32B32A32_FLOAT
+{{note("32 elements per batch, 4 floats per element")}}
 array = {{ 32 * merged_object.shapekeys.batches | length }}
-array = 32
 {%- endif %}
 
 ; Resources: Buffers -------------------------
