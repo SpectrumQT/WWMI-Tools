@@ -182,7 +182,7 @@ class WWMI_Settings(bpy.types.PropertyGroup):
 
     apply_all_modifiers: BoolProperty(
         name="Apply All Modifiers",
-        description="Automatically apply all existing modifiers to temporary copies of each object",
+        description="Automatically apply all visible modifiers to temporary copies of each object",
         default=False,
     ) # type: ignore
 
