@@ -39,38 +39,41 @@ class ObjectMergerWWMI(ObjectMerger):
     @staticmethod
     def fill_missing_data(objects):
         verts_dict, center, scale = None, None, None
-        for object in objects:
-            mesh = object.data
-            # Fill missing COLOR
-            if not mesh.attributes.get('COLOR', None):
-                data = numpy.zeros((len(mesh.loops), 4), dtype=numpy.float32)
-                data[:, 1] = 0.25
-                data[:, 3] = 1.0
-                create_color_attribute(mesh, 'COLOR', data)
-            # Fill missing COLOR1
-            if not mesh.attributes.get('COLOR1', None):
-                data = numpy.zeros((len(mesh.loops), 4), dtype=numpy.float32)
-                create_color_attribute(mesh, 'COLOR1', data)
-            # Fill missing TEXCOORD.xy
-            if not mesh.uv_layers.get('TEXCOORD.xy'):
-                create_uv_layer(mesh, 'TEXCOORD.xy')
-            # Fill missing TEXCOORD1.xy
-            if not mesh.uv_layers.get('TEXCOORD1.xy'):
-                copy_uv_layer(mesh, 'TEXCOORD.xy', 'TEXCOORD1.xy')
-            # Fill missing TEXCOORD2.xy
-            if not mesh.uv_layers.get('TEXCOORD2.xy'):
-                if verts_dict is None:
-                    verts_dict = collect_vertices([object.data for object in objects])
-                    # Compute bounding box from all parts
-                    center, scale = compute_bounding_box_from_frontal_projection(verts_dict)
-                # Generate UV using pre-collected vertices
-                create_uv_layer_from_frontal_projection(
-                    mesh=mesh,
-                    verts=verts_dict[mesh],
-                    center=center,
-                    scale=scale,
-                    uv_layer_name='TEXCOORD2.xy'
-                )
+        try:
+            for object in objects:
+                mesh = object.data
+                # Fill missing COLOR
+                if not mesh.attributes.get('COLOR', None):
+                    data = numpy.zeros((len(mesh.loops), 4), dtype=numpy.float32)
+                    data[:, 1] = 0.25
+                    data[:, 3] = 1.0
+                    create_color_attribute(mesh, 'COLOR', data)
+                # Fill missing COLOR1
+                if not mesh.attributes.get('COLOR1', None):
+                    data = numpy.zeros((len(mesh.loops), 4), dtype=numpy.float32)
+                    create_color_attribute(mesh, 'COLOR1', data)
+                # Fill missing TEXCOORD.xy
+                if not mesh.uv_layers.get('TEXCOORD.xy'):
+                    create_uv_layer(mesh, 'TEXCOORD.xy')
+                # Fill missing TEXCOORD1.xy
+                if not mesh.uv_layers.get('TEXCOORD1.xy'):
+                    copy_uv_layer(mesh, 'TEXCOORD.xy', 'TEXCOORD1.xy')
+                # Fill missing TEXCOORD2.xy
+                if not mesh.uv_layers.get('TEXCOORD2.xy'):
+                    if verts_dict is None:
+                        verts_dict = collect_vertices([object.data for object in objects])
+                        # Compute bounding box from all parts
+                        center, scale = compute_bounding_box_from_frontal_projection(verts_dict)
+                    # Generate UV using pre-collected vertices
+                    create_uv_layer_from_frontal_projection(
+                        mesh=mesh,
+                        verts=verts_dict[mesh],
+                        center=center,
+                        scale=scale,
+                        uv_layer_name='TEXCOORD2.xy'
+                    )
+        except Exception as e:
+            raise ValueError(f"Failed to fill missing data for temp object `{object.name}`: {str(e)}")
 
 
 # TODO: Add support of export of unhandled semantics from vertex attributes
