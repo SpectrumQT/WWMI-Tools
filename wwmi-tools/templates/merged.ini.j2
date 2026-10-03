@@ -1,4 +1,4 @@
-; WWMI BETA-8 INI
+; WWMI BETA-9 INI
 
 {%- macro note(text) %}{% if comment_code %}; {{ text }}{% else %};DEL{% endif %}{% endmacro %}
 
@@ -178,6 +178,7 @@ if !$blend_remaps_initialized
 
     {{note("Specify which remap data to use from ResourceBlendRemapReverseBuffer")}}
     $\WWMIv1\blend_remap_id = {{ component.blend_remap_id }}
+    $\WWMIv1\blend_remap_bone_count = 1024
     {{note("Copy original Blend.buf from resource without specified `stride` to temp resource")}}
     {{note("We cannot use default ResourceBlendBuffer since CS cannot address it fully due to `stride`")}}
     ResourceRemappedBlendBufferRW = copy ResourceBlendBufferNoStride
@@ -211,6 +212,7 @@ cs-t37 = ResourceBlendRemapForwardBuffer
 {{note("Remap Component%d Merged Skeleton" | format(loop.index0))}}
 {{note("Specify which remap data to use from ResourceBlendRemapForwardBuffer")}}
 $\WWMIv1\blend_remap_id = {{ component.blend_remap_id }}
+$\WWMIv1\blend_remap_bone_count = 1024
 {{note("Specify how many VGs to process, used to properly allocate CS dispatch size")}}
 $\WWMIv1\vg_count = {{ component.blend_remap_vg_count }}
 {{note("Remap merged skeleton for Component%d to use in all draw calls of current frame" | format(loop.index0))}}
@@ -219,6 +221,7 @@ cs-u5 = ResourceRemappedSkeletonRW
 run = CustomShader\WWMIv1\SkeletonRemapper
 ResourceRemappedSkeletonComponent{{ loop.index0 }} = copy ResourceRemappedSkeletonRW
 {{note("Remap second merged skeleton for Component%d to use in all draw calls of current frame" | format(loop.index0))}}
+$\WWMIv1\blend_remap_bone_count = 1024
 cs-t38 = ResourceExtraMergedSkeletonRemap
 cs-u5 = ResourceExtraRemappedSkeletonRW
 run = CustomShader\WWMIv1\SkeletonRemapper
@@ -659,15 +662,15 @@ array = {{ 32 * merged_object.shapekeys.batches | length }}
 
 {{note("Stores merged skeleton consisting of bones from all components, allows to make VG weights global")}}
 [ResourceMergedSkeletonRW]
-{{note("Contains up to 256 bones (or up to 512 with blend remaps)")}}
+{{note("Contains up to 256 bones (or up to 1024 with blend remaps)")}}
 type = RWBuffer
 format = R32G32B32A32_FLOAT
 {%- if merged_object.blend_remap_count == 0 %}
 {{note("256 bones, 3 elements per bone, 4 floats per element")}}
 array = 768
 {%- else %}
-{{note("512 bones, 3 elements per bone, 4 floats per element")}}
-array = 1536
+{{note("1024 bones, 3 elements per bone, 4 floats per element")}}
+array = 3072
 {%- endif %}
 
 {{note("Stores a copy of full extra skeleton merged in previous frame")}}
@@ -675,15 +678,15 @@ array = 1536
 
 {{note("Stores additional merged skeleton used by some shaders like Anti Aliasing")}}
 [ResourceExtraMergedSkeletonRW]
-{{note("Contains up to 256 bones (or up to 512 with blend remaps)")}}
+{{note("Contains up to 256 bones (or up to 1024 with blend remaps)")}}
 type = RWBuffer
 format = R32G32B32A32_FLOAT
 {%- if merged_object.blend_remap_count == 0 %}
 {{note("256 bones, 3 elements per bone, 4 floats per element")}}
 array = 768
 {%- else %}
-{{note("512 bones, 3 elements per bone, 4 floats per element")}}
-array = 1536
+{{note("1024 bones, 3 elements per bone, 4 floats per element")}}
+array = 3072
 {%- endif %}
 
 ; Resources: Buffers -------------------------

@@ -327,10 +327,10 @@ class DataModelWWMI(DataModel):
             
             remapped_vgs_counts.append(len(obj_vg_ids))
 
-            forward = numpy.zeros(512, dtype=numpy.uint16)
+            forward = numpy.zeros(1024, dtype=numpy.uint16)
             forward[numpy.arange(len(obj_vg_ids))] = obj_vg_ids
 
-            reverse = numpy.zeros(512, dtype=numpy.uint16)
+            reverse = numpy.zeros(1024, dtype=numpy.uint16)
             reverse[obj_vg_ids] = numpy.arange(len(obj_vg_ids))
 
             blend_remap_forward = numpy.concatenate((blend_remap_forward, forward), axis=0)
@@ -354,6 +354,6 @@ class DataModelWWMI(DataModel):
         buffers['BlendRemapReverse'].set_data(blend_remap_reverse)
         buffers['BlendRemapLayout'].set_data(numpy.array(remapped_vgs_counts))
 
-        print(f'Blend remap time: {time.time() - start_time :.3f}s ({int(len(blend_remap_forward) / 512)} remaps)')
+        print(f'Blend remap time: {time.time() - start_time :.3f}s ({int(len(blend_remap_forward) / 1024)} remaps)')
 
         return buffers
