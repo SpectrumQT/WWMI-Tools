@@ -154,6 +154,8 @@ def create_color_attribute(mesh: bpy.types.Mesh, color_layer_name: str, data: nu
 
 
 def create_uv_layer(mesh: bpy.types.Mesh, uv_layer_name: str, data: numpy.ndarray | None = None):
+    if len(mesh.uv_layers) == 8:
+        raise ValueError(f"Failed to create `{uv_layer_name}` UV Map: mesh `{mesh.name}` already has the maximum of 8 UV maps")
     uv_layer = mesh.uv_layers.new(name=uv_layer_name)
     if data is None:
         data = numpy.zeros(len(uv_layer.data) * 2, dtype=numpy.float32)
