@@ -164,7 +164,7 @@ class IniMaker:
             print(f'Ini template caching time: {time.time() - start_time :.3f}s')
 
         try:
-            rendered_string = template.render(vars(self))
+            rendered_string = template.render({**vars(self), 'enumerate': enumerate})
         except UndefinedError as e:
                 raise ValueError(f'Ini Template filling error:\n'
                                  f'{e}')
