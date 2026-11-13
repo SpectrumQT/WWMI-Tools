@@ -30,11 +30,11 @@ global $object_guid = {{ extracted_object.index_count }}
 global $mesh_vertex_count = {{ merged_object.vertex_count }}
 {{note("Number of shapekeyed vertices in custom model")}}
 global $shapekey_vertex_count = {{ merged_object.shapekeys.vertex_count }}
-{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{%- for shapekey_batch_id, shapekey_batch in enumerate(merged_object.shapekeys.batches) %}
 {{note("ID of the first shapekeyed vertex of this shapekeys batch")}}
-global $shapekey_vertex_offset_batch{{ loop.index0 }} = {{ shapekey_batch.vertex_offset }}
+global $shapekey_vertex_offset_batch{{ shapekey_batch_id}} = {{ shapekey_batch.vertex_offset }}
 {{note("Number of shapekeyed vertices for this shapekeys batch")}}
-global $shapekey_vertex_count_batch{{ loop.index0 }} = {{ shapekey_batch.vertex_count }}
+global $shapekey_vertex_count_batch{{ shapekey_batch_id }} = {{ shapekey_batch.vertex_count }}
 {%- endfor %}
 {{note("ID assigned to our mod by WWMI")}}
 global $mod_id = -1000
@@ -49,8 +49,8 @@ global $object_detected = 0
 global persist {{ formatter.format_ini_swapvar(var.name) }} = {{ var.default_state or 0 }}
 {%- endfor %}
 ; Per-object state vars
-{%- for component in extracted_object.components %}
-{%- for obj in merged_object.components[loop.index0].objects %}
+{%- for component_id, component in enumerate(extracted_object.components) %}
+{%- for obj in merged_object.components[component_id].objects %}
 global {{ formatter.format_ini_drawvar(obj.name) }} = 1
 {%- endfor %}
 {%- endfor %}
@@ -196,24 +196,24 @@ vb6 = null
 {{note("Restore original vb0 so we can use its hash to match next call")}}
 vb0 = ref ResourceBypassVB0
 
-{%- for component in extracted_object.components %}
+{%- for component_id, component in enumerate(extracted_object.components) %}
 
-{{note("Override draw calls for Component %d" | format(loop.index0))}}
-[TextureOverrideComponent{{ loop.index0 }}]
+{{note("Override draw calls for Component %d" | format(component_id))}}
+[TextureOverrideComponent{{ component_id }}]
 hash = {{ extracted_object.vb0_hash }}
 match_first_index = {{ component.index_offset }}
 match_index_count = {{ component.index_count }}
 {{note("Signal our mod that object is found on screen and we can start overriding it")}}
 $object_detected = 1
 if $mod_enabled
-{%- if merged_object.components[loop.index0].objects | length > 0 %}
+{%- if merged_object.components[component_id].objects | length > 0 %}
     {{note("Skip original draw call")}}
     handling = skip
     {{note("Trigger by-hash resource overrides")}}
     run = CommandListTriggerResourceOverrides
     {{note("Do by-slot resource overrides")}}
     run = CommandListOverrideSharedResources
-    {%- for obj in merged_object.components[loop.index0].objects %}
+    {%- for obj in merged_object.components[component_id].objects %}
 	; Draw {{ obj.name }}
 	{%- if cfg.use_ini_toggles %}
 	if {{ formatter.format_ini_drawvar(obj.name) }}
@@ -242,16 +242,16 @@ endif
 
 ; Shading: Textures -------------------------
 
-{%- for texture in textures %}
+{%- for texture_id, texture in enumerate(textures) %}
 
-[ResourceTexture{{ loop.index0 }}]
+[ResourceTexture{{ texture_id }}]
 filename = Textures/{{ texture.filename }}
 
-[TextureOverrideTexture{{ loop.index0 }}]
+[TextureOverrideTexture{{ texture_id }}]
 hash = {{ texture.hash }}
 match_priority = 0
 if $object_detected
-    this = ResourceTexture{{ loop.index0 }}
+    this = ResourceTexture{{ texture_id }}
 endif
 {%- endfor %}
 
@@ -275,13 +275,13 @@ override_vertex_count = $mesh_vertex_count
 {{note("Updates ResourceShapeKeyCBRW that stores offsets of shapekeyed vertex lists, shape key values and multipliers")}}
 [CommandListSetupShapeKeysBatch]
 {{note("Pass params for all batches, so CS could dynamically identify current batch and override its values at runtime")}}
-{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{%- for shapekey_batch_id, shapekey_batch in enumerate(merged_object.shapekeys.batches) %}
 {{note("Pass 4 byte checksum of shapekey offsets of current batch to ensure that we only modify expected values")}}
-$\WWMIv1\shapekey_checksum_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].checksum }}
+$\WWMIv1\shapekey_checksum_batch{{ shapekey_batch_id }} = {{ extracted_object.shapekeys.batches[shapekey_batch_id].checksum }}
 {{note("Pass original vertex offset so shader could distinguigh batches with same checksum")}}
-$\WWMIv1\shapekey_vertex_offset_original_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].vertex_offset }}
+$\WWMIv1\shapekey_vertex_offset_original_batch{{ shapekey_batch_id }} = {{ extracted_object.shapekeys.batches[shapekey_batch_id].vertex_offset }}
 {{note("Pass modded vertex offset to override first vertex ID of current batch")}}
-$\WWMIv1\shapekey_vertex_offset_custom_batch{{ loop.index0 }} = $shapekey_vertex_offset_batch{{ loop.index0 }}
+$\WWMIv1\shapekey_vertex_offset_custom_batch{{ shapekey_batch_id }} = $shapekey_vertex_offset_batch{{ shapekey_batch_id }}
 {%- endfor %}
 {{note("Pass buffer with offsets for vertex lists of every shape key of custom model")}}
 cs-t33 = ResourceShapeKeyOffsetBuffer
@@ -295,11 +295,11 @@ run = CustomShader\WWMIv1\ShapeKeyBatchOverrider
 {{note("Runs custom Shape Key Loader CS to, well, load shapekeys data from buffers")}}
 [CommandListLoadShapeKeysBatch]
 {{note("Pass params for all batches, so WWMI could dynamically calculate THREAD_GROUP_COUNT_Y")}}
-{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{%- for shapekey_batch_id, shapekey_batch in enumerate(merged_object.shapekeys.batches) %}
 {{note("Pass original Y threads count for given batch (it allows WWMI to identify the call)")}}
-$\WWMIv1\shapekey_dispatch_size_y_original_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].dispatch_y }}
+$\WWMIv1\shapekey_dispatch_size_y_original_batch{{ shapekey_batch_id }} = {{ extracted_object.shapekeys.batches[shapekey_batch_id].dispatch_y }}
 {{note("Pass number of shapekeyed vertices for given batch (WWMI computes required THREAD_GROUP_COUNT_Y from it)")}}
-$\WWMIv1\shapekey_vertex_count_batch{{ loop.index0 }} = $shapekey_vertex_count_batch{{ loop.index0 }}
+$\WWMIv1\shapekey_vertex_count_batch{{ shapekey_batch_id }} = $shapekey_vertex_count_batch{{ shapekey_batch_id }}
 {%- endfor %}
 {{note("Pass buffer with lists of per-vertex ids for every shape key")}}
 cs-t0 = ResourceShapeKeyVertexIdBuffer

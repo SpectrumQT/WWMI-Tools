@@ -30,11 +30,11 @@ global $object_guid = {{ extracted_object.index_count }}
 global $mesh_vertex_count = {{ merged_object.vertex_count }}
 {{note("Number of shapekeyed vertices in custom model")}}
 global $shapekey_vertex_count = {{ merged_object.shapekeys.vertex_count }}
-{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{%- for shapekey_batch_id, shapekey_batch in enumerate(merged_object.shapekeys.batches) %}
 {{note("ID of the first shapekeyed vertex of this shapekeys batch")}}
-global $shapekey_vertex_offset_batch{{ loop.index0 }} = {{ shapekey_batch.vertex_offset }}
+global $shapekey_vertex_offset_batch{{ shapekey_batch_id }} = {{ shapekey_batch.vertex_offset }}
 {{note("Number of shapekeyed vertices for this shapekeys batch")}}
-global $shapekey_vertex_count_batch{{ loop.index0 }} = {{ shapekey_batch.vertex_count }}
+global $shapekey_vertex_count_batch{{ shapekey_batch_id }} = {{ shapekey_batch.vertex_count }}
 {%- endfor %}
 {{note("ID assigned to our mod by WWMI")}}
 global $mod_id = -1000
@@ -51,8 +51,8 @@ global $merge_status_id = 0
 {{note("0 - neither regular nor special skeleton bones data was collected for this component")}}
 {{note("1 - only regular skeleton bones data was collected for this component")}}
 {{note("2 - both regular and special skeleton bones data was collected for this component")}}
-{%- for component in extracted_object.components %}
-global $merge_status_id_{{ loop.index0 }} = 0
+{%- for component_id, component in enumerate(extracted_object.components) %}
+global $merge_status_id_{{ component_id }} = 0
 {%- endfor %}
 {%- if cfg.use_ini_toggles %}
 ; Swap vars aka toggles defaults
@@ -60,8 +60,8 @@ global $merge_status_id_{{ loop.index0 }} = 0
 global persist {{ formatter.format_ini_swapvar(var.name) }} = {{ var.default_state or 0 }}
 {%- endfor %}
 ; Per-object state vars
-{%- for component in extracted_object.components %}
-{%- for obj in merged_object.components[loop.index0].objects %}
+{%- for component_id, component in enumerate(extracted_object.components) %}
+{%- for obj in merged_object.components[component_id].objects %}
 global {{ formatter.format_ini_drawvar(obj.name) }} = 1
 {%- endfor %}
 {%- endfor %}
@@ -122,8 +122,8 @@ endif
 {{note("Copes hard to make merged skeleton work with WuWa 1.1+ pipeline")}}
 [CommandListUpdateMergedSkeleton]
 {{note("Reset skeleton merge status for all components")}}
-{%- for component in extracted_object.components %}
-$merge_status_id_{{ loop.index0 }} = 0
+{%- for component_id, component in enumerate(extracted_object.components) %}
+$merge_status_id_{{ component_id }} = 0
 {%- endfor %}
 {{note("Copy skeleton merged in previous frame to new buffer so we could force it to vs-cb4 slot")}}
 ResourceMergedSkeleton = copy ResourceMergedSkeletonRW
@@ -147,12 +147,12 @@ run = CommandListRemapMergedSkeleton
 [ResourceRemappedSkeletonRW]
 [ResourceExtraRemappedSkeletonRW]
 
-{%- for component in merged_object.components %}
+{%- for component_id, component in enumerate(merged_object.components) %}
 {%- if component.blend_remap_vg_count > 0 %}
 
-[ResourceRemappedBlendBufferComponent{{ loop.index0 }}]
-[ResourceRemappedSkeletonComponent{{ loop.index0 }}]
-[ResourceExtraRemappedSkeletonComponent{{ loop.index0 }}]
+[ResourceRemappedBlendBufferComponent{{ component_id }}]
+[ResourceRemappedSkeletonComponent{{ component_id }}]
+[ResourceExtraRemappedSkeletonComponent{{ component_id }}]
 {%- endif %}
 {%- endfor %}
 
@@ -173,7 +173,7 @@ if !$blend_remaps_initialized
     {{note("Pass 16-bit VG ids of each vertex (original Blend.buf is 8-bit and cannot store VG ids above 255)")}}
     cs-t35 = ref ResourceBlendRemapVertexVGBuffer
 
-    {%- for component in merged_object.components %}
+    {%- for component_id, component in enumerate(merged_object.components) %}
     {%- if component.blend_remap_vg_count > 0 %}
 
     {{note("Specify which remap data to use from ResourceBlendRemapReverseBuffer")}}
@@ -187,9 +187,9 @@ if !$blend_remaps_initialized
     {{note("Run CS to remap VG ids in temp resource")}}
     run = CustomShader\WWMIv1\BlendRemapper
     {{note("Copy remapped temp resource to permanent storage")}}
-    ResourceRemappedBlendBufferComponent{{ loop.index0 }} = copy ResourceRemappedBlendBufferRW
+    ResourceRemappedBlendBufferComponent{{ component_id }} = copy ResourceRemappedBlendBufferRW
     {{note("Copy D3D11_BUFFER_DESC from original Blend.buf, since game expects buffer with correct `stride`")}}
-    ResourceRemappedBlendBufferComponent{{ loop.index0 }} = copy_desc ResourceBlendBuffer
+    ResourceRemappedBlendBufferComponent{{ component_id }} = copy_desc ResourceBlendBuffer
     {%- endif %}
     {%- endfor %}
 
@@ -206,26 +206,26 @@ ResourceExtraMergedSkeletonRemap = copy ResourceExtraMergedSkeletonRW
 {{note("Pass resource with all VG maps used for merged skeleton remapping calls")}}
 cs-t37 = ResourceBlendRemapForwardBuffer
 
-{%- for component in merged_object.components %}
+{%- for component_id, component in enumerate(merged_object.components) %}
 {%- if component.blend_remap_vg_count > 0 %}
 
-{{note("Remap Component%d Merged Skeleton" | format(loop.index0))}}
+{{note("Remap Component%d Merged Skeleton" | format(component_id))}}
 {{note("Specify which remap data to use from ResourceBlendRemapForwardBuffer")}}
 $\WWMIv1\blend_remap_id = {{ component.blend_remap_id }}
 $\WWMIv1\blend_remap_bone_count = 1024
 {{note("Specify how many VGs to process, used to properly allocate CS dispatch size")}}
 $\WWMIv1\vg_count = {{ component.blend_remap_vg_count }}
-{{note("Remap merged skeleton for Component%d to use in all draw calls of current frame" | format(loop.index0))}}
+{{note("Remap merged skeleton for Component%d to use in all draw calls of current frame" | format(component_id))}}
 cs-t38 = ResourceMergedSkeletonRemap
 cs-u5 = ResourceRemappedSkeletonRW
 run = CustomShader\WWMIv1\SkeletonRemapper
-ResourceRemappedSkeletonComponent{{ loop.index0 }} = copy ResourceRemappedSkeletonRW
-{{note("Remap second merged skeleton for Component%d to use in all draw calls of current frame" | format(loop.index0))}}
+ResourceRemappedSkeletonComponent{{ component_id }} = copy ResourceRemappedSkeletonRW
+{{note("Remap second merged skeleton for Component%d to use in all draw calls of current frame" | format(component_id))}}
 $\WWMIv1\blend_remap_bone_count = 1024
 cs-t38 = ResourceExtraMergedSkeletonRemap
 cs-u5 = ResourceExtraRemappedSkeletonRW
 run = CustomShader\WWMIv1\SkeletonRemapper
-ResourceExtraRemappedSkeletonComponent{{ loop.index0 }} = copy ResourceExtraRemappedSkeletonRW
+ResourceExtraRemappedSkeletonComponent{{ component_id }} = copy ResourceExtraRemappedSkeletonRW
 {%- endif %}
 {%- endfor %}
 {%- endif %}
@@ -424,10 +424,10 @@ if ResourceBlendBufferOverride !== null
 endif
 {%- endif %}
 
-{%- for component in extracted_object.components %}
+{%- for component_id, component in enumerate(extracted_object.components) %}
 
-{{note("Override draw calls for Component %d" | format(loop.index0))}}
-[TextureOverrideComponent{{ loop.index0 }}]
+{{note("Override draw calls for Component %d" | format(component_id))}}
+[TextureOverrideComponent{{ component_id }}]
 hash = {{ extracted_object.vb0_hash }}
 match_first_index = {{ component.index_offset }}
 match_index_count = {{ component.index_count }}
@@ -435,27 +435,27 @@ match_index_count = {{ component.index_count }}
 $object_detected = 1
 if $mod_enabled
     {{note("Try to get skeleton data from each call of the stack until merge status is 2 (see Constants for details)")}}
-    if $merge_status_id_{{ loop.index0 }} != 2
+    if $merge_status_id_{{ component_id }} != 2
         {{note("Configure SkeletonMerger shader based on VG layout of current component")}}
-        $\WWMIv1\vg_offset = {{ extracted_object.components[loop.index0].vg_offset }}
-        $\WWMIv1\vg_count = {{ extracted_object.components[loop.index0].vg_count }}
+        $\WWMIv1\vg_offset = {{ extracted_object.components[component_id].vg_offset }}
+        $\WWMIv1\vg_count = {{ extracted_object.components[component_id].vg_count }}
         {{note("Pass current merge status to MergeSkeleton command list")}}
-		$merge_status_id = $merge_status_id_{{ loop.index0 }}
+		$merge_status_id = $merge_status_id_{{ component_id }}
         {{note("Execute MergeSkeleton command list, updated merge status will be written to $merge_status_id")}}
 		run = CommandListMergeSkeleton
         {{note("Remember merge status locally")}}
-		$merge_status_id_{{ loop.index0 }} = $merge_status_id
+		$merge_status_id_{{ component_id }} = $merge_status_id
 	endif
     {{note("Override draw call if we have merged skeleton ready")}}
     if ResourceMergedSkeleton !== null
-    {%- if merged_object.components[loop.index0].objects | length > 0 %}
+    {%- if merged_object.components[component_id].objects | length > 0 %}
         {{note("Skip original draw call")}}
         handling = skip
-        {%- if merged_object.components[loop.index0].blend_remap_vg_count > 0 %}
+        {%- if merged_object.components[component_id].blend_remap_vg_count > 0 %}
         {{note("Plug-in active blend remap data for this component")}}
-        ResourceBlendBufferOverride = ref ResourceRemappedBlendBufferComponent{{ loop.index0 }}
-        ResourceMergedSkeletonOverride = ref ResourceRemappedSkeletonComponent{{ loop.index0 }}
-        ResourceExtraMergedSkeletonOverride = ref ResourceExtraRemappedSkeletonComponent{{ loop.index0 }}
+        ResourceBlendBufferOverride = ref ResourceRemappedBlendBufferComponent{{ component_id }}
+        ResourceMergedSkeletonOverride = ref ResourceRemappedSkeletonComponent{{ component_id }}
+        ResourceExtraMergedSkeletonOverride = ref ResourceExtraRemappedSkeletonComponent{{ component_id }}
         {%- endif %}
         {{note("Trigger by-hash resource overrides")}}
         run = CommandListTriggerResourceOverrides
@@ -491,16 +491,16 @@ endif
 
 ; Shading: Textures -------------------------
 
-{%- for texture in textures %}
+{%- for texture_id, texture in enumerate(textures) %}
 
-[ResourceTexture{{ loop.index0 }}]
+[ResourceTexture{{ texture_id }}]
 filename = Textures/{{ texture.filename }}
 
-[TextureOverrideTexture{{ loop.index0 }}]
+[TextureOverrideTexture{{ texture_id }}]
 hash = {{ texture.hash }}
 match_priority = 0
 if $object_detected
-    this = ResourceTexture{{ loop.index0 }}
+    this = ResourceTexture{{ texture_id }}
 endif
 {%- endfor %}
 
@@ -524,13 +524,13 @@ override_vertex_count = $mesh_vertex_count
 {{note("Updates ResourceShapeKeyCBRW that stores offsets of shapekeyed vertex lists, shape key values and multipliers")}}
 [CommandListSetupShapeKeysBatch]
 {{note("Pass params for all batches, so CS could dynamically identify current batch and override its values at runtime")}}
-{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{%- for shapekey_batch_id, shapekey_batch in enumerate(merged_object.shapekeys.batches) %}
 {{note("Pass 4 byte checksum of shapekey offsets of current batch to ensure that we only modify expected values")}}
-$\WWMIv1\shapekey_checksum_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].checksum }}
+$\WWMIv1\shapekey_checksum_batch{{ shapekey_batch_id }} = {{ extracted_object.shapekeys.batches[shapekey_batch_id].checksum }}
 {{note("Pass original vertex offset so shader could distinguigh batches with same checksum")}}
-$\WWMIv1\shapekey_vertex_offset_original_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].vertex_offset }}
+$\WWMIv1\shapekey_vertex_offset_original_batch{{ shapekey_batch_id }} = {{ extracted_object.shapekeys.batches[shapekey_batch_id].vertex_offset }}
 {{note("Pass modded vertex offset to override first vertex ID of current batch")}}
-$\WWMIv1\shapekey_vertex_offset_custom_batch{{ loop.index0 }} = $shapekey_vertex_offset_batch{{ loop.index0 }}
+$\WWMIv1\shapekey_vertex_offset_custom_batch{{ shapekey_batch_id }} = $shapekey_vertex_offset_batch{{ shapekey_batch_id }}
 {%- endfor %}
 {{note("Pass buffer with offsets for vertex lists of every shape key of custom model")}}
 cs-t33 = ResourceShapeKeyOffsetBuffer
@@ -544,11 +544,11 @@ run = CustomShader\WWMIv1\ShapeKeyBatchOverrider
 {{note("Runs custom Shape Key Loader CS to, well, load shapekeys data from buffers")}}
 [CommandListLoadShapeKeysBatch]
 {{note("Pass params for all batches, so WWMI could dynamically calculate THREAD_GROUP_COUNT_Y")}}
-{%- for shapekey_batch in merged_object.shapekeys.batches %}
+{%- for shapekey_batch_id, shapekey_batch in enumerate(merged_object.shapekeys.batches) %}
 {{note("Pass original Y threads count for given batch (it allows WWMI to identify the call)")}}
-$\WWMIv1\shapekey_dispatch_size_y_original_batch{{ loop.index0 }} = {{ extracted_object.shapekeys.batches[loop.index0].dispatch_y }}
+$\WWMIv1\shapekey_dispatch_size_y_original_batch{{ shapekey_batch_id }} = {{ extracted_object.shapekeys.batches[shapekey_batch_id].dispatch_y }}
 {{note("Pass number of shapekeyed vertices for given batch (WWMI computes required THREAD_GROUP_COUNT_Y from it)")}}
-$\WWMIv1\shapekey_vertex_count_batch{{ loop.index0 }} = $shapekey_vertex_count_batch{{ loop.index0 }}
+$\WWMIv1\shapekey_vertex_count_batch{{ shapekey_batch_id }} = $shapekey_vertex_count_batch{{ shapekey_batch_id }}
 {%- endfor %}
 {{note("Pass buffer with lists of per-vertex ids for every shape key")}}
 cs-t0 = ResourceShapeKeyVertexIdBuffer
