@@ -159,16 +159,8 @@ filename = Textures/Logo.dds
 
 {{note("Overrides textures via triggering [ResourceTextureX] sections by calling chechtextureoverride on ps-t slots")}}
 [CommandListTriggerResourceOverrides]
-{{note("Trigger texture sections to replace texture with matching hash")}}
-CheckTextureOverride = ps-t0
-CheckTextureOverride = ps-t1
-CheckTextureOverride = ps-t2
-CheckTextureOverride = ps-t3
-CheckTextureOverride = ps-t4
-CheckTextureOverride = ps-t5
-CheckTextureOverride = ps-t6
-CheckTextureOverride = ps-t7
-CheckTextureOverride = ps-t8
+{{note("Initialize dhash-based texture matching for current draw call")}}
+run = SnapshotOriginalTextures
 
 {{note("Overrides resources that are shared between VS calls")}}
 [CommandListOverrideSharedResources]
@@ -195,6 +187,8 @@ vb6 = null
 [CommandListCleanupSharedResources]
 {{note("Restore original vb0 so we can use its hash to match next call")}}
 vb0 = ref ResourceBypassVB0
+{{note("Reset textures in all ps-t slots back to originally set for the current draw call.")}}
+run = RestoreOriginalTextures
 
 {%- for component_id, component in enumerate(extracted_object.components) %}
 
@@ -213,6 +207,12 @@ if $mod_enabled
     run = CommandListTriggerResourceOverrides
     {{note("Do by-slot resource overrides")}}
     run = CommandListOverrideSharedResources
+    ; Override textures using dhash-based matching
+    {%- for texture_id, texture in enumerate(textures) %}
+    {%- if component_id in texture.components %}
+    ps->MatchTextures(ResourceTexture{{ texture_id }}) = ref ResourceTexture{{ texture_id }}
+    {%- endif %}
+    {%- endfor %}
     {%- for obj in merged_object.components[component_id].objects %}
 	; Draw {{ obj.name }}
 	{%- if cfg.use_ini_toggles %}
@@ -246,13 +246,8 @@ endif
 
 [ResourceTexture{{ texture_id }}]
 filename = Textures/{{ texture.filename }}
-
-[TextureOverrideTexture{{ texture_id }}]
-hash = {{ texture.hash }}
-match_priority = 0
-if $object_detected
-    this = ResourceTexture{{ texture_id }}
-endif
+match_format = {{ texture.format }}
+match_dhash = {{ texture.dhash }}
 {%- endfor %}
 
 {% if merged_object.shapekeys.vertex_count > 0 -%}
