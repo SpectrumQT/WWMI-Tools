@@ -65,6 +65,8 @@ class DataExtractor:
         self.shader_hashes = {}
         self.shape_key_data = {}
         self.draw_data = {}
+        self.texture_dhashes: dict[str, str] = {}
+        self.texture_formats: dict[str, str] = {}
 
         self.handle_shapekey_cs_0(list(self.call_branches.values()))
         self.handle_static_draw_vs(list(self.call_branches.values()))
@@ -207,6 +209,27 @@ class DataExtractor:
                 for texture_id in range(16):
                     texture = branch_call.resources.get(f'TEXTURE_{texture_id}', None)
                     if texture is not None:
+
+                        texture_dhashes = branch_call.call.parameters.get(CallParameters.DHashes, None)
+                        if texture_dhashes is not None:
+                            dhash = texture_dhashes.get(texture.hash, None)
+                            if dhash is not None:
+                                known_dhash = self.texture_dhashes.get(texture.hash, None)
+                                if known_dhash is not None and known_dhash != dhash:
+                                    raise ValueError(f"Texture dhash mismatch for texture {texture}: {known_dhash} != {dhash}")
+                                self.texture_dhashes[texture.hash] = dhash
+                        texture.dhash = self.texture_dhashes.get(texture.hash, None)
+
+                        texture_formats = branch_call.call.parameters.get(CallParameters.TextureFormats, None)
+                        if texture_formats is not None:
+                            format = texture_formats.get(texture.hash, None)
+                            if format is not None:
+                                known_format = self.texture_formats.get(texture.hash, None)
+                                if known_format is not None and known_format != format:
+                                    raise ValueError(f"Texture format mismatch for texture {texture}: {known_format} != {format}")
+                                self.texture_formats[texture.hash] = format
+                        texture.format = self.texture_formats.get(texture.hash, None)
+
                         textures.append(texture)
 
                 draw_data = DrawData(

@@ -124,6 +124,8 @@ class ResourceDescriptor:
         self.slot_shader_type = None
         self.hash = None
         self.old_hash = None
+        self.dhash = None
+        self.format = None
         self.data = ResourceData(self.path)
         self.shaders = []
         if calculate_sha256:
