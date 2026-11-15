@@ -115,6 +115,18 @@ class ModExporter:
         except Exception as e:
             raise ConfigError('object_source_folder', f'Failed to load Metadata.json:\n{e}')
 
+        if not self.cfg.partial_export:
+            try:
+                self.textures = get_textures(self.object_source_folder, [])
+            except Exception as e:
+                raise ConfigError('object_source_folder', f"""
+                    Specified sources folder contains textures with unknown or outdated name format!
+                    
+                    Please extract the object again from a new frame dump with this WWMI Tools version.
+
+                    Error: {e}
+                """)
+            
         user_context = get_user_context(self.context)
 
         try:
@@ -134,8 +146,6 @@ class ModExporter:
             set_user_context(self.context, user_context)
 
         if not self.cfg.partial_export:
-            self.textures = get_textures(self.object_source_folder, [])
-
             if self.cfg.write_ini:
                 try:
                     self.build_mod_ini()
