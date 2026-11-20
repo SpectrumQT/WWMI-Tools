@@ -215,8 +215,8 @@ class DataExtractor:
                             dhash = texture_dhashes.get(texture.hash, None)
                             if dhash is not None:
                                 known_dhash = self.texture_dhashes.get(texture.hash, None)
-                                if known_dhash is not None and known_dhash != dhash:
-                                    raise ValueError(f"Texture dhash mismatch for texture {texture}: {known_dhash} != {dhash}")
+                                if known_dhash != dhash:
+                                    print(f"WARNING! Texture dhash mismatch for texture {texture}: {known_dhash} != {dhash}")
                                 self.texture_dhashes[texture.hash] = dhash
                         texture.dhash = self.texture_dhashes.get(texture.hash, None)
 
@@ -225,8 +225,8 @@ class DataExtractor:
                             format = texture_formats.get(texture.hash, None)
                             if format is not None:
                                 known_format = self.texture_formats.get(texture.hash, None)
-                                if known_format is not None and known_format != format:
-                                    raise ValueError(f"Texture format mismatch for texture {texture}: {known_format} != {format}")
+                                if known_format != format:
+                                    print(f"WARNING! Texture format mismatch for texture {texture}: {known_format} != {format}")
                                 self.texture_formats[texture.hash] = format
                         texture.format = self.texture_formats.get(texture.hash, None)
 
