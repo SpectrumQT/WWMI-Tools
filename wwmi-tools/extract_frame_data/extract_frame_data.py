@@ -275,8 +275,8 @@ def write_objects(output_directory, objects: Dict[str, ObjectData], allow_missin
         for texture_hash, texture in textures.items():
             path = Path(texture['path'])
             components = '-'.join(sorted(list(set(texture['components']))))
-            shutil.copyfile(path, object_directory / f'c={components} f={texture['format']} t={texture_hash} d={texture['dhash']}{path.suffix}')
-            
+            shutil.copyfile(path, object_directory / f"c={components} f={texture['format']} t={texture_hash} d={texture['dhash']}{path.suffix}")
+
         with open(object_directory / f'TextureUsage.json', "w") as f:
             f.write(json.dumps(texture_usage, indent=4))
 
