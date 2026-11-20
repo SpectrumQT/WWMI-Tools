@@ -160,7 +160,7 @@ filename = Textures/Logo.dds
 {{note("Overrides textures via triggering [ResourceTextureX] sections by calling chechtextureoverride on ps-t slots")}}
 [CommandListTriggerResourceOverrides]
 {{note("Initialize dhash-based texture matching for current draw call")}}
-run = SnapshotOriginalTextures
+run = SnapshotInitialTextures
 
 {{note("Overrides resources that are shared between VS calls")}}
 [CommandListOverrideSharedResources]
@@ -188,7 +188,7 @@ vb6 = null
 {{note("Restore original vb0 so we can use its hash to match next call")}}
 vb0 = ref ResourceBypassVB0
 {{note("Reset textures in all ps-t slots back to originally set for the current draw call.")}}
-run = RestoreOriginalTextures
+run = RestoreInitialTextures
 
 {%- for component_id, component in enumerate(extracted_object.components) %}
 
@@ -207,10 +207,10 @@ if $mod_enabled
     run = CommandListTriggerResourceOverrides
     {{note("Do by-slot resource overrides")}}
     run = CommandListOverrideSharedResources
-    ; Override textures using dhash-based matching
+    {{note("Override textures using dhash-based matching")}}
     {%- for texture_id, texture in enumerate(textures) %}
     {%- if component_id in texture.components %}
-    ps->MatchTextures(ResourceTexture{{ texture_id }}) = ref ResourceTexture{{ texture_id }}
+    ps-t[FilterTexture{{ texture_id }}] = ref ResourceTexture{{ texture_id }}
     {%- endif %}
     {%- endfor %}
     {%- for obj in merged_object.components[component_id].objects %}
@@ -246,6 +246,7 @@ endif
 
 [ResourceTexture{{ texture_id }}]
 filename = Textures/{{ texture.filename }}
+[FilterTexture{{ texture_id }}]
 match_format = {{ texture.format }}
 match_dhash = {{ texture.dhash }}
 {%- endfor %}

@@ -340,7 +340,7 @@ endif
 {{note("Overrides textures via triggering [ResourceTextureX] sections by calling chechtextureoverride on ps-t slots")}}
 [CommandListTriggerResourceOverrides]
 {{note("Initialize dhash-based texture matching for current draw call")}}
-run = SnapshotOriginalTextures
+run = SnapshotInitialTextures
 {{note("Trigger callbacks on bone data CBs to assign them filter_index")}}
 {{note("These buffers cannot be replaced directly via `this` as their hash is widely used by many objects")}}
 CheckTextureOverride = vs-cb3
@@ -415,8 +415,8 @@ if ResourceBlendBufferOverride !== null
     ResourceExtraMergedSkeletonOverride = null
 endif
 {%- endif %}
-{{note("Reset textures in all ps-t slots back to originally set for the current draw call.")}}
-run = RestoreOriginalTextures
+{{note("Reset textures in all ps-t slots back to captured for the current draw call.")}}
+run = RestoreInitialTextures
 
 {%- for component_id, component in enumerate(extracted_object.components) %}
 
@@ -455,10 +455,10 @@ if $mod_enabled
         run = CommandListTriggerResourceOverrides
         {{note("Do by-slot resource overrides")}}
         run = CommandListOverrideSharedResources
-        ; Override textures using dhash-based matching
+        {{note("Override textures using dhash-based matching")}}
         {%- for texture_id, texture in enumerate(textures) %}
         {%- if component_id in texture.components %}
-        ps->MatchTextures(ResourceTexture{{ texture_id }}) = ref ResourceTexture{{ texture_id }}
+        ps-t[FilterTexture{{ texture_id }}] = ref ResourceTexture{{ texture_id }}
         {%- endif %}
         {%- endfor %}
     {%- for obj in merged_object.components[component_id].objects %}
@@ -495,6 +495,7 @@ endif
 
 [ResourceTexture{{ texture_id }}]
 filename = Textures/{{ texture.filename }}
+[FilterTexture{{ texture_id }}]
 match_format = {{ texture.format }}
 match_dhash = {{ texture.dhash }}
 {%- endfor %}
